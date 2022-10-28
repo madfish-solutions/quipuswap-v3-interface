@@ -3,6 +3,9 @@ import { confirmOperation } from "./helpers/confirmation";
 import { BigNumber } from "bignumber.js";
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 import { Address, Nat, Int } from "./utils";
+
+type TezosContract = ReturnType<Awaited<TezosToolkit.contract.at>>
+
 export namespace fa2Types {
   export type TransferDestination = {
     to_: Address;
@@ -288,6 +291,25 @@ export namespace quipuswapV3Types {
   };
 }
 
+namespace Decorators {
+
+}
+
+namespace SwapXY {
+  getTransferParams() {
+    return //params
+  }
+
+  send() {
+    return Decorators.send(getTransferParams)
+  }
+
+  sendUntilConfirm() {
+    return Decorators.sendUntilConfirm(getTransferParams)
+  }
+}
+
+
 export class QuipuswapV3Methods {
   static async swapXY(
     tezos: TezosToolkit,
@@ -331,13 +353,25 @@ export class QuipuswapV3Methods {
     return operation;
   }
 
-  static async setPosition(
-    tezos: TezosToolkit,
-    contractAddress: string,
+  static async decorator<T>(tezos: TezosToolkit, contractAddress: string, params: T, callback: (contract: TezosContract, params: T) => Promise<any>) {
+    try {
+      const contract = await tezos.contract.at(contractAddress);
+
+      const operation = await callback(contract, params);
+
+      await confirmOperation(tezos, operation.hash);
+
+      return operation;
+    } catch (error) {
+
+    }
+  }
+
+  static async setPositionShoto(
+    contract: TezosContract,
     params: quipuswapV3Types.SetPosition,
   ): Promise<TransactionOperation> {
-    const contract = await tezos.contract.at(contractAddress);
-    const operation = await contract.methodsObject
+    return await contract.methodsObject
       .set_position({
         lower_tick_index: { i: params.lowerTickIndex.toFixed() },
         upper_tick_index: { i: params.upperTickIndex.toFixed() },
@@ -349,10 +383,13 @@ export class QuipuswapV3Methods {
           x: params.maximumTokensContributed.x.toFixed(),
           y: params.maximumTokensContributed.y.toFixed(),
         },
-      })
-      .send();
-    await confirmOperation(tezos, operation.hash);
-    return operation;
+      }).toTransferParams();
+  }
+
+  static async setPosition(tezos: TezosToolkit, contractAddress: string, params: quipuswapV3Types.SetPosition) {
+    sendBatchOperation(tezos, [params]);
+
+    return await QuipuswapV3Methods.decorator(tezos, contractAddress, params, QuipuswapV3Methods.setPositionShoto);
   }
 
   static async updatePosition(
@@ -360,19 +397,43 @@ export class QuipuswapV3Methods {
     contractAddress: string,
     params: quipuswapV3Types.UpdatePosition,
   ): Promise<TransactionOperation> {
-    const contract = await tezos.contract.at(contractAddress);
-    const operation = await contract.methodsObject
-      .update_position({
-        position_id: params.positionId,
-        liquidity_delta: params.liquidityDelta,
-        to_x: params.toX,
-        to_y: params.toY,
-        deadline: params.deadline,
-        maximum_tokens_contributed: params.maximumTokensContributed,
-      })
-      .send();
-    await confirmOperation(tezos, operation.hash);
-    return operation;
+    try {
+      const contract = await tezos.contract.at(contractAddress);//50 ms
+      const operation = await contract.methodsObject
+        .update_position({
+          position_id: params.positionId,
+          liquidity_delta: params.liquidityDelta,
+          to_x: params.toX,
+          to_y: params.toY,
+          deadline: params.deadline,
+          maximum_tokens_contributed: params.maximumTokensContributed,
+        })
+        .send();
+      apliduteService.setEvent('updatePosition', operation.hash);
+      await confirmOperation(tezos, operation.hash);
+      return operation;
+    } catch {
+      console.log('error')
+    }
+  }
+
+  static async createUpdatePositionOperation(
+    contract: ReturnType<Awaited<typeof TezosToolkit.contract.at>>,
+    params: quipuswapV3Types.UpdatePosition,
+  ): Promise<TransactionOperation> {
+    try {
+      return await contract.methodsObject
+        .update_position({
+          position_id: params.positionId,
+          liquidity_delta: params.liquidityDelta,
+          to_x: params.toX,
+          to_y: params.toY,
+          deadline: params.deadline,
+          maximum_tokens_contributed: params.maximumTokensContributed,
+        })
+    } catch (error) {
+
+    }
   }
 
   /**
@@ -460,7 +521,11 @@ export class QuipuswapV3Storage {
 }
 
 export class QuipuswapV3 {
-  constructor(private tezos: TezosToolkit, private contractAddress: string) {}
+  contract: ReturnType<Awaited<TezosToolkit.contract.at>>
+
+  constructor(private tezos: TezosToolkit, private contractAddress: string) {
+    this.contract = tezos.contract.at(contractAddress)
+  }
 
   async getStorage(): Promise<any> {
     return QuipuswapV3Storage.getStorage(this.tezos, this.contractAddress);
