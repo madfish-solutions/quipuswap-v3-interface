@@ -466,7 +466,7 @@ export class QuipuswapV3 {
   }
 
   async getStorage(): Promise<any> {
-    return QuipuswapV3Storage.getStorage(this.tezos, this.contractAddress);
+    return QuipuswapV3Storage.getStorage(this.contract);
   }
 
   /**
@@ -509,7 +509,7 @@ export class QuipuswapV3 {
   ): Promise<TransactionOperation> {
     return QuipuswapV3Methods.swapYX(
       this.tezos,
-      new Address(this.contractAddress),
+      this.contract,
       new Nat(amount),
       deadline,
       new Nat(minExpectedReceive),
@@ -543,7 +543,7 @@ export class QuipuswapV3 {
       x: new Nat(maximumTokensContributedX),
       y: new Nat(maximumTokensContributedY),
     };
-    return QuipuswapV3Methods.setPosition(this.tezos, this.contractAddress, {
+    return QuipuswapV3Methods.setPosition(this.tezos, this.contract, {
       lowerTickIndex,
       upperTickIndex,
       lowerTickWitness,
@@ -583,7 +583,7 @@ export class QuipuswapV3 {
     const positionIdN = new Nat(positionId);
     const liquidityDeltaN = new Nat(liquidityDelta);
     const toYaddress = new Address(toY);
-    return QuipuswapV3Methods.updatePosition(this.tezos, this.contractAddress, {
+    return QuipuswapV3Methods.updatePosition(this.tezos, this.contract, {
       positionId: positionIdN,
       liquidityDelta: liquidityDeltaN,
       toX: toXaddress,
@@ -603,7 +603,7 @@ export class QuipuswapV3 {
   ): Promise<TransactionOperation> {
     return QuipuswapV3Methods.IncreaseObservationCount(
       this.tezos,
-      this.contractAddress,
+      this.contract,
       new Nat(amount),
     );
   }
@@ -619,11 +619,7 @@ export class QuipuswapV3 {
    * @returns TransactionOperation
    */
   async transfer(params: fa2Types.Transfer[]): Promise<TransactionOperation> {
-    return QuipuswapV3Methods.transfer(
-      this.tezos,
-      this.contractAddress,
-      params,
-    );
+    return QuipuswapV3Methods.transfer(this.tezos, this.contract, params);
   }
 
   /** Update operator
@@ -635,10 +631,6 @@ export class QuipuswapV3 {
    * @returns TransactionOperation
    */
   async updateOperator(params: fa2Types.UpdateOperator[]) {
-    return QuipuswapV3Methods.updateOperator(
-      this.tezos,
-      this.contractAddress,
-      params,
-    );
+    return QuipuswapV3Methods.updateOperator(this.tezos, this.contract, params);
   }
 }
