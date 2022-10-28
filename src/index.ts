@@ -1,8 +1,10 @@
-import { TezosToolkit, TransactionOperation } from "@taquito/taquito";
+import { Contract, TezosToolkit, TransactionOperation } from "@taquito/taquito";
 import { confirmOperation } from "./helpers/confirmation";
 import { BigNumber } from "bignumber.js";
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 import { Address, Nat, Int } from "./utils";
+type TezosContract = ReturnType<TezosToolkit["contract"]["at"]>;
+
 export namespace fa2Types {
   export type TransferDestination = {
     to_: Address;
@@ -291,13 +293,12 @@ export namespace quipuswapV3Types {
 export class QuipuswapV3Methods {
   static async swapXY(
     tezos: TezosToolkit,
-    contractAddress: Address,
+    contract: Contract,
     amount: Nat,
     deadline: string,
     minExpectedReceive: Nat,
     recipient: Address,
   ): Promise<TransactionOperation> {
-    const contract = await tezos.contract.at(contractAddress.toString());
     const operation = await contract.methodsObject
       .x_to_y({
         dx: amount.toFixed(),
@@ -312,13 +313,12 @@ export class QuipuswapV3Methods {
 
   static async swapYX(
     tezos: TezosToolkit,
-    contractAddress: Address,
+    contract: Contract,
     amount: Nat,
     deadline: string,
     minExpectedReceive: Nat,
     recipient: Address,
   ): Promise<TransactionOperation> {
-    const contract = await tezos.contract.at(contractAddress.toString());
     const operation = await contract.methodsObject
       .y_to_x({
         dx: amount.toFixed(),
@@ -333,10 +333,9 @@ export class QuipuswapV3Methods {
 
   static async setPosition(
     tezos: TezosToolkit,
-    contractAddress: string,
+    contract: Contract,
     params: quipuswapV3Types.SetPosition,
   ): Promise<TransactionOperation> {
-    const contract = await tezos.contract.at(contractAddress);
     const operation = await contract.methodsObject
       .set_position({
         lower_tick_index: { i: params.lowerTickIndex.toFixed() },
@@ -357,10 +356,9 @@ export class QuipuswapV3Methods {
 
   static async updatePosition(
     tezos: TezosToolkit,
-    contractAddress: string,
+    contract: Contract,
     params: quipuswapV3Types.UpdatePosition,
   ): Promise<TransactionOperation> {
-    const contract = await tezos.contract.at(contractAddress);
     const operation = await contract.methodsObject
       .update_position({
         position_id: params.positionId,
@@ -384,10 +382,9 @@ export class QuipuswapV3Methods {
    */
   static async transfer(
     tezos: TezosToolkit,
-    contractAddress: string,
+    contract: Contract,
     params: fa2Types.Transfer[],
   ): Promise<TransactionOperation> {
-    const contract = await tezos.contract.at(contractAddress);
     const transferParams = params.map(param => {
       return {
         from_: param.from_.toString(),
@@ -407,10 +404,9 @@ export class QuipuswapV3Methods {
 
   static async updateOperator(
     tezos: TezosToolkit,
-    contractAddress: string,
+    contract: Contract,
     params: fa2Types.UpdateOperator[],
   ): Promise<TransactionOperation> {
-    const contract = await tezos.contract.at(contractAddress);
     const updateOperatorParams = params.map(param => {
       if ("add_operator" in param) {
         return {
@@ -430,17 +426,18 @@ export class QuipuswapV3Methods {
         };
       }
     });
-    const operation = await contract.methods.update_operators(params).send();
+    const operation = await contract.methods
+      .update_operators(updateOperatorParams)
+      .send();
     await confirmOperation(tezos, operation.hash);
     return operation;
   }
 
   static async IncreaseObservationCount(
     tezos: TezosToolkit,
-    contractAddress: string,
+    contract: Contract,
     amount: Nat,
   ): Promise<TransactionOperation> {
-    const contract = await tezos.contract.at(contractAddress);
     const operation = await contract.methodsObject
       .increase_observation_count({ added_observation_count: amount.toFixed() })
       .send();
@@ -454,13 +451,19 @@ export class QuipuswapV3Storage {
    * @param contract
    * @returns
    */
-  static async getStorage(tezos: TezosToolkit, contract: string): Promise<any> {
-    return await (await tezos.contract.at(contract)).storage();
+  static async getStorage(contract: Contract): Promise<unknown> {
+    return contract.storage();
   }
 }
-
+//type TezosContract = ReturnType<Awaited<TezosToolkit["contract"]["at"]>>;
 export class QuipuswapV3 {
+  contract: Contract;
   constructor(private tezos: TezosToolkit, private contractAddress: string) {}
+
+  async init(tezos: TezosToolkit, contractAddress: string) {
+    this.contract = await tezos.contract.at(contractAddress);
+    return this;
+  }
 
   async getStorage(): Promise<any> {
     return QuipuswapV3Storage.getStorage(this.tezos, this.contractAddress);
@@ -482,7 +485,7 @@ export class QuipuswapV3 {
   ): Promise<TransactionOperation> {
     return QuipuswapV3Methods.swapXY(
       this.tezos,
-      new Address(this.contractAddress),
+      this.contract,
       new Nat(amount),
       deadline,
       new Nat(minExpectedReceive),
