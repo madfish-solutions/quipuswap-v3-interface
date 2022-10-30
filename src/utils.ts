@@ -1,6 +1,8 @@
 import BigNumber from "bignumber.js";
-
+import { tezosTypes } from "./types";
+import { TezosToolkit, TransferParams } from "@taquito/taquito";
 const { validateAddress } = require("@taquito/utils");
+
 /**
  * @category Utils
  */
@@ -88,3 +90,18 @@ export class Int {
       .integerValue(roundingMode);
   }
 }
+
+export function batchify<B extends tezosTypes.Batch>(
+  batch: B,
+  transfers: TransferParams[],
+): B {
+  for (const tParams of transfers) {
+    batch.withTransfer(tParams);
+  }
+  return batch;
+}
+
+export const sendBatch = async (
+  tezos: TezosToolkit,
+  operationParams: TransferParams[],
+) => await batchify(tezos.wallet.batch([]), operationParams).send();

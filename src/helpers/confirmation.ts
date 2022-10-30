@@ -9,9 +9,6 @@ import {
 } from "@taquito/rpc";
 import { TezosToolkit, OpKind } from "@taquito/taquito";
 
-export const SYNC_INTERVAL: number = +env.syncInterval;
-export const CONFIRM_TIMEOUT: number = +env.confirmTimeout;
-
 export type ConfirmOperationOptions = {
   initializedAt?: number;
   fromBlockLevel?: number;
@@ -21,6 +18,8 @@ export type ConfirmOperationOptions = {
 export async function confirmOperation(
   tezos: TezosToolkit,
   opHash: string,
+  CONFIRM_TIMEOUT: number,
+  SYNC_INTERVAL: number,
   { initializedAt, fromBlockLevel, signal }: ConfirmOperationOptions = {},
 ): Promise<OperationEntry> {
   if (!initializedAt) {
@@ -71,7 +70,7 @@ export async function confirmOperation(
 
   await new Promise(r => setTimeout(r, timeToWait));
 
-  return confirmOperation(tezos, opHash, {
+  return confirmOperation(tezos, opHash, CONFIRM_TIMEOUT, SYNC_INTERVAL, {
     initializedAt,
     fromBlockLevel: currentBlockLevel ? currentBlockLevel + 1 : fromBlockLevel,
     signal,
