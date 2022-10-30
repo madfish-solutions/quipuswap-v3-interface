@@ -271,11 +271,11 @@ export class QuipuswapV3 {
       y: new Nat(maximumTokensContributedY),
     };
     const params = [
-      lowerTickIndex,
-      upperTickIndex,
-      lowerTickWitness,
-      upperTickWitness,
-      liquidity,
+      { i: new Int(lowerTickIndex) },
+      { i: new Int(upperTickIndex) },
+      { i: new Int(lowerTickWitness) },
+      { i: new Int(upperTickWitness) },
+      new Nat(liquidity),
       deadline,
       maximumTokensContributed,
     ];
@@ -309,7 +309,7 @@ export class QuipuswapV3 {
     };
     const toXaddress = new Address(toX);
     const positionIdN = new Nat(positionId);
-    const liquidityDeltaN = new Nat(liquidityDelta);
+    const liquidityDeltaN = new Int(liquidityDelta);
     const toYaddress = new Address(toY);
     const params = [
       {

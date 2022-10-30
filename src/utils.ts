@@ -27,36 +27,48 @@ export class Address extends AddressPrimitive {
   }
 }
 
+class Precision {
+  static fromPrecision(precision: number) {
+    return new BigNumber(10).pow(precision);
+  }
+}
+
 /**
  * @category Utils
  * @description Utility class to represent a Tezos Nat type which is a BigNumber
  * @example
  * const nat = new Nat('100')
+ * nat.toNumber() // 100
+ * nat.toString() // '100'
+ * nat.plus(1).toString() // '101'
+ * nat.toPow(2).toString() // '10000'
+ * nat.fromPow(2).toString() // '1'
  */
-export class Nat {
-  _nat: BigNumber;
-  constructor(number: BigNumber) {
+export class Nat extends BigNumber {
+  // _nat: BigNumber;
+  constructor(number: BigNumber | number | string) {
+    number = new BigNumber(number);
     if (number < new BigNumber(0) && !number.isInteger()) {
-      throw new Error(`Invalid nat: ${number}`);
+      throw new Error(`Invalid nat: ${number.toString()}`);
     }
-    this._nat = number;
+    super(number);
   }
-  toString(): string {
-    return this._nat.toString();
-  }
-  toFixed(): string {
-    return this._nat.toFixed();
-  }
-  fromPrecision(
+
+  fromPow(
     precision: number,
     roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
   ): BigNumber {
-    return this._nat
-      .dividedBy(new BigNumber(10).pow(precision))
-      .integerValue(roundingMode);
+    return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
   }
-  toPrecision(precision: number) {
-    return this._nat.multipliedBy(new BigNumber(10).pow(precision));
+  toPow(
+    precision: number,
+    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  ): BigNumber {
+    return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
   }
 }
 
@@ -64,15 +76,21 @@ export class Nat {
  * @category Utils
  * @description Utility class to represent a Tezos Int type which is a BigNumber
  * @example
- * const int = new Int('-100')
+ * const int = new Int('new BigNumber(-100)')
+ * int.toString() // '-100'
+ * int.toFixed() // '-100'
+ * int.fromPrecision(6) // BigNumber(-0.0001)
+ * int.toPrecision(6) // BigNumber(-1000000)
  */
-export class Int {
+
+export class Int extends BigNumber {
   _int: BigNumber;
-  constructor(number: BigNumber) {
+  constructor(number: BigNumber | number | string) {
+    number = new BigNumber(number);
     if (!number.isInteger()) {
       throw new Error(`Invalid int: ${number}`);
     }
-    this._int = number;
+    super(number);
   }
   toString(): string {
     return this._int.toString();
@@ -80,17 +98,31 @@ export class Int {
   toFixed(): string {
     return this._int.toFixed();
   }
+  toBigNumber(): BigNumber {
+    return this._int;
+  }
 
-  fromPrecision(
+  fromPow(
     precision: number,
     roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
   ): BigNumber {
-    return this._int
-      .dividedBy(new BigNumber(10).pow(precision))
-      .integerValue(roundingMode);
+    return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
+  }
+  toPow(
+    precision: number,
+    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  ): BigNumber {
+    return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
   }
 }
 
+/**
+ * @category Utils
+ */
 export function batchify<B extends tezosTypes.Batch>(
   batch: B,
   transfers: TransferParams[],
@@ -101,7 +133,12 @@ export function batchify<B extends tezosTypes.Batch>(
   return batch;
 }
 
+/** @category Utils
+ * @description Utility function to send a batch of operations
+ * @example
+ * const batch = await sendBatch(tezos, [transferParams])
+ */
 export const sendBatch = async (
   tezos: TezosToolkit,
   operationParams: TransferParams[],
-) => await batchify(tezos.wallet.batch([]), operationParams).send();
+) => batchify(tezos.wallet.batch([]), operationParams).send();
