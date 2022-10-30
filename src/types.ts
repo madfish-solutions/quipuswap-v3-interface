@@ -7,7 +7,7 @@ import {
 } from "@taquito/taquito";
 import { BigNumber } from "bignumber.js";
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
-import { Address, Nat, Int } from "./utils";
+import { Address, Nat, Int, Timestamp } from "./utils";
 
 export type CallMode =
   | "returnParams"
@@ -249,7 +249,7 @@ export namespace quipuswapV3Types {
     lowerTickWitness: BigNumber;
     upperTickWitness: BigNumber;
     liquidity: BigNumber;
-    deadline: string;
+    deadline: Timestamp;
     maximumTokensContributed: BalanceNat;
   };
 
@@ -270,7 +270,7 @@ export namespace quipuswapV3Types {
     /** Where to send the freed Y tokens, if any. */
     toY: Address;
     /** The transaction won't be executed past this point. */
-    deadline: string;
+    deadline: Timestamp;
     /** The maximum number of tokens to contribute.
         If a higher amount is required, the entrypoint fails.
     */

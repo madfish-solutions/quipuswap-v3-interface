@@ -8,7 +8,7 @@ import {
   CallSettings,
   ReturnMethodType,
 } from "./types";
-import { Address, Nat, Int, sendBatch } from "./utils";
+import { Address, Nat, Int, sendBatch, Timestamp } from "./utils";
 import { defaultCallSettings } from "./helpers/defaults";
 
 export class QuipuswapV3Methods {
@@ -34,14 +34,14 @@ export class QuipuswapV3Methods {
   static swapXY(
     contract: Contract,
     amount: Nat,
-    deadline: string,
+    deadline: Timestamp,
     minExpectedReceive: Nat,
     recipient: Address,
   ): TransferParams {
     const params = contract.methodsObject
       .x_to_y({
         dx: amount.toFixed(),
-        deadline: deadline,
+        deadline: deadline.toString(),
         min_dy: minExpectedReceive.toFixed(),
         to_dy: recipient.toString(),
       })
@@ -53,14 +53,14 @@ export class QuipuswapV3Methods {
   static swapYX(
     contract: Contract,
     amount: Nat,
-    deadline: string,
+    deadline: Timestamp,
     minExpectedReceive: Nat,
     recipient: Address,
   ): TransferParams {
     const transferParams = contract.methodsObject
       .y_to_x({
         dx: amount.toFixed(),
-        deadline: deadline,
+        deadline: deadline.toString(),
         min_dx: minExpectedReceive.toFixed(),
         to_dx: recipient.toString(),
       })
@@ -80,7 +80,7 @@ export class QuipuswapV3Methods {
         lower_tick_witness: { i: params.lowerTickWitness.toFixed() },
         upper_tick_witness: { i: params.upperTickWitness.toFixed() },
         liquidity: params.liquidity.toFixed(),
-        deadline: params.deadline,
+        deadline: params.deadline.toString(),
         maxiumum_tokens_contributed: {
           x: params.maximumTokensContributed.x.toFixed(),
           y: params.maximumTokensContributed.y.toFixed(),
@@ -100,7 +100,7 @@ export class QuipuswapV3Methods {
         liquidity_delta: params.liquidityDelta,
         to_x: params.toX,
         to_y: params.toY,
-        deadline: params.deadline,
+        deadline: params.deadline.toString(),
         maximum_tokens_contributed: params.maximumTokensContributed,
       })
       .toTransferParams();
@@ -213,7 +213,7 @@ export class QuipuswapV3 {
     const transferParams = [
       this.contract,
       new Nat(amount),
-      deadline,
+      new Timestamp(deadline),
       new Nat(minExpectedReceive),
       new Address(recipient),
     ];
@@ -237,7 +237,7 @@ export class QuipuswapV3 {
     const params = [
       this.contract,
       new Nat(amount),
-      deadline,
+      new Timestamp(deadline),
       new Nat(minExpectedReceive),
       new Address(recipient),
     ];
@@ -276,7 +276,7 @@ export class QuipuswapV3 {
       { i: new Int(lowerTickWitness) },
       { i: new Int(upperTickWitness) },
       new Nat(liquidity),
-      deadline,
+      new Timestamp(deadline),
       maximumTokensContributed,
     ];
     return { callParams: params, callback: QuipuswapV3Methods.setPosition };
@@ -311,13 +311,14 @@ export class QuipuswapV3 {
     const positionIdN = new Nat(positionId);
     const liquidityDeltaN = new Int(liquidityDelta);
     const toYaddress = new Address(toY);
+    const fDeadline = new Timestamp(deadline);
     const params = [
       {
         positionId: positionIdN,
         liquidityDelta: liquidityDeltaN,
         toX: toXaddress,
         toY: toYaddress,
-        deadline,
+        fDeadline,
         maximumTokensContributed,
       },
     ];

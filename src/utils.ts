@@ -120,6 +120,19 @@ export class Int extends BigNumber {
   }
 }
 
+export class Timestamp {
+  _timestamp: string;
+  constructor(timestamp: number | string) {
+    if (new Date(timestamp).toString() == "Invalid Date") {
+      throw new Error(`Invalid timestamp: ${timestamp}`);
+    }
+    this._timestamp = timestamp.toString();
+  }
+  toString() {
+    return this._timestamp;
+  }
+}
+
 /**
  * @category Utils
  */
