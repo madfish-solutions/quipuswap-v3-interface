@@ -1,13 +1,15 @@
 import BigNumber from "bignumber.js";
-
+import { tezosTypes } from "./types";
+import { TezosToolkit, TransferParams } from "@taquito/taquito";
 const { validateAddress } = require("@taquito/utils");
+
 /**
  * @category Utils
  */
 class AddressPrimitive {
   _address: string;
   constructor(address: string) {
-    if (~validateAddress(address)) {
+    if (validateAddress(address) != 3) {
       throw new Error(`Invalid address: ${address}`);
     }
     this._address = address.toString();
@@ -25,36 +27,48 @@ export class Address extends AddressPrimitive {
   }
 }
 
+class Precision {
+  static fromPrecision(precision: number) {
+    return new BigNumber(10).pow(precision);
+  }
+}
+
 /**
  * @category Utils
  * @description Utility class to represent a Tezos Nat type which is a BigNumber
  * @example
  * const nat = new Nat('100')
+ * nat.toNumber() // 100
+ * nat.toString() // '100'
+ * nat.plus(1).toString() // '101'
+ * nat.toPow(2).toString() // '10000'
+ * nat.fromPow(2).toString() // '1'
  */
-export class Nat {
-  _nat: BigNumber;
-  constructor(number: BigNumber) {
-    if (number < new BigNumber(0) && !number.isInteger()) {
-      throw new Error(`Invalid nat: ${number}`);
+export class Nat extends BigNumber {
+  // _nat: BigNumber;
+  constructor(number: BigNumber | number | string) {
+    number = new BigNumber(number);
+    if (number < new BigNumber(0) || !number.isInteger() || number.isNaN()) {
+      throw new Error(`Invalid nat: ${number.toString()}`);
     }
-    this._nat = number;
+    super(number);
   }
-  toString(): string {
-    return this._nat.toString();
-  }
-  toFixed(): string {
-    return this._nat.toFixed();
-  }
-  fromPrecision(
+
+  fromPow(
     precision: number,
     roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
   ): BigNumber {
-    return this._nat
-      .dividedBy(new BigNumber(10).pow(precision))
-      .integerValue(roundingMode);
+    return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
   }
-  toPrecision(precision: number) {
-    return this._nat.multipliedBy(new BigNumber(10).pow(precision));
+  toPow(
+    precision: number,
+    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  ): BigNumber {
+    return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
   }
 }
 
@@ -62,29 +76,80 @@ export class Nat {
  * @category Utils
  * @description Utility class to represent a Tezos Int type which is a BigNumber
  * @example
- * const int = new Int('-100')
+ * const int = new Int('new BigNumber(-100)')
+ * int.toString() // '-100'
+ * int.toFixed() // '-100'
+ * int.fromPrecision(6) // BigNumber(-0.0001)
+ * int.toPrecision(6) // BigNumber(-1000000)
  */
-export class Int {
-  _int: BigNumber;
-  constructor(number: BigNumber) {
-    if (!number.isInteger()) {
+
+export class Int extends BigNumber {
+  constructor(number: BigNumber | number | string) {
+    number = new BigNumber(number);
+    if (!number.isInteger() || number.isNaN()) {
       throw new Error(`Invalid int: ${number}`);
     }
-    this._int = number;
-  }
-  toString(): string {
-    return this._int.toString();
-  }
-  toFixed(): string {
-    return this._int.toFixed();
+    super(number);
   }
 
-  fromPrecision(
+  fromPow(
     precision: number,
     roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
   ): BigNumber {
-    return this._int
-      .dividedBy(new BigNumber(10).pow(precision))
-      .integerValue(roundingMode);
+    return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
+  }
+  toPow(
+    precision: number,
+    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  ): BigNumber {
+    return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
   }
 }
+
+export class Timestamp {
+  _timestamp: string;
+  constructor(timestamp: string) {
+    let newTimestamp = Number(timestamp);
+
+    if (isNaN(newTimestamp)) {
+      newTimestamp = Date.parse(timestamp);
+      if (isNaN(newTimestamp)) {
+        throw new Error(`Invalid timestamp: ${timestamp}`);
+      }
+    } else if (newTimestamp < 0) {
+      throw new Error(`Invalid timestamp: ${timestamp}`);
+    }
+    this._timestamp = newTimestamp.toString();
+  }
+
+  toString() {
+    return this._timestamp;
+  }
+}
+
+/**
+ * @category Utils
+ */
+export function batchify<B extends tezosTypes.Batch>(
+  batch: B,
+  transfers: TransferParams[],
+): B {
+  for (const tParams of transfers) {
+    batch.withTransfer(tParams);
+  }
+  return batch;
+}
+
+/** @category Utils
+ * @description Utility function to send a batch of operations
+ * @example
+ * const batch = await sendBatch(tezos, [transferParams])
+ */
+export const sendBatch = async (
+  tezos: TezosToolkit,
+  operationParams: TransferParams[],
+) => batchify(tezos.wallet.batch([]), operationParams).send();
