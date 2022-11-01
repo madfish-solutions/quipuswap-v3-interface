@@ -9,7 +9,7 @@ const { validateAddress } = require("@taquito/utils");
 class AddressPrimitive {
   _address: string;
   constructor(address: string) {
-    if (~validateAddress(address)) {
+    if (validateAddress(address) != 3) {
       throw new Error(`Invalid address: ${address}`);
     }
     this._address = address.toString();
@@ -48,7 +48,7 @@ export class Nat extends BigNumber {
   // _nat: BigNumber;
   constructor(number: BigNumber | number | string) {
     number = new BigNumber(number);
-    if (number < new BigNumber(0) && !number.isInteger()) {
+    if (number < new BigNumber(0) || !number.isInteger() || number.isNaN()) {
       throw new Error(`Invalid nat: ${number.toString()}`);
     }
     super(number);
@@ -84,22 +84,12 @@ export class Nat extends BigNumber {
  */
 
 export class Int extends BigNumber {
-  _int: BigNumber;
   constructor(number: BigNumber | number | string) {
     number = new BigNumber(number);
-    if (!number.isInteger()) {
+    if (!number.isInteger() || number.isNaN()) {
       throw new Error(`Invalid int: ${number}`);
     }
     super(number);
-  }
-  toString(): string {
-    return this._int.toString();
-  }
-  toFixed(): string {
-    return this._int.toFixed();
-  }
-  toBigNumber(): BigNumber {
-    return this._int;
   }
 
   fromPow(
@@ -122,12 +112,20 @@ export class Int extends BigNumber {
 
 export class Timestamp {
   _timestamp: string;
-  constructor(timestamp: number | string) {
-    if (new Date(timestamp).toString() == "Invalid Date") {
+  constructor(timestamp: string) {
+    let newTimestamp = Number(timestamp);
+
+    if (isNaN(newTimestamp)) {
+      newTimestamp = Date.parse(timestamp);
+      if (isNaN(newTimestamp)) {
+        throw new Error(`Invalid timestamp: ${timestamp}`);
+      }
+    } else if (newTimestamp < 0) {
       throw new Error(`Invalid timestamp: ${timestamp}`);
     }
-    this._timestamp = timestamp.toString();
+    this._timestamp = newTimestamp.toString();
   }
+
   toString() {
     return this._timestamp;
   }

@@ -6,6 +6,6 @@ export const defaultCallSettings: CallSettings = {
   setPosition: "returnConfirmatedOperation",
   updatePosition: "returnConfirmatedOperation",
   transfer: "returnConfirmatedOperation",
-  updateOperator: "returnConfirmatedOperation",
+  updateOperators: "returnConfirmatedOperation",
   increaseObservationCount: "returnConfirmatedOperation",
 };

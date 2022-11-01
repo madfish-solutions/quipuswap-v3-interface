@@ -2,6 +2,7 @@ import { Contract, TezosToolkit, TransferParams } from "@taquito/taquito";
 import { BatchWalletOperation } from "@taquito/taquito/dist/types/wallet/batch-operation";
 import { sendBatch } from "../utils";
 import { confirmOperation } from "./confirmation";
+import { quipuswapV3Types as qsTypes } from "../../src/types";
 
 export function paramsOnly<T>(
   contract: Contract,
@@ -10,9 +11,10 @@ export function paramsOnly<T>(
 ): TransferParams {
   try {
     const transferParams = callback(contract, ...callParams);
-
     return transferParams;
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 export async function send<T>(
@@ -53,7 +55,7 @@ export async function sendAndConfirmation<T>(
   }
 }
 
-export async function extendCallQS<T>(
+export function extendCallQS<T>(
   target: Object,
   propertyKey: string,
   descriptor: PropertyDescriptor,
@@ -61,7 +63,7 @@ export async function extendCallQS<T>(
   const f = descriptor.value;
 
   descriptor.value = async function (...args: T[]) {
-    const { callParams, callback } = f(...args);
+    const { callParams, callback } = await f(...args);
     switch (this.callSettings[propertyKey]) {
       case "returnOperation":
         return send(this.contract, callback, this.tezos, ...callParams);

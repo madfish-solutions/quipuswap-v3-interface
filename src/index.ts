@@ -1,36 +1,17 @@
-import { Contract, TezosToolkit } from "@taquito/taquito";
-
+import { Contract, TezosToolkit, TransferParams } from "@taquito/taquito";
 import { BigNumber } from "bignumber.js";
-import { TransferParams } from "@taquito/taquito";
 import {
   fa2Types,
   quipuswapV3Types,
   CallSettings,
   ReturnMethodType,
+  QsReturn,
 } from "./types";
-import { Address, Nat, Int, sendBatch, Timestamp } from "./utils";
+import { Address, Nat, Int, Timestamp } from "./utils";
 import { defaultCallSettings } from "./helpers/defaults";
+import { extendCallQS } from "./helpers/decorators";
 
 export class QuipuswapV3Methods {
-  static async awaitTx(
-    target: Object,
-    propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ) {
-    // if (onlyRead) {
-    //   return descriptor;
-    // }
-    let originalMethod = descriptor.value;
-
-    var f = descriptor.value;
-
-    descriptor.value = async function (x: any) {
-      console.log(typeof x);
-      return await f(x);
-    };
-    Object.defineProperty(target, propertyKey, descriptor);
-  }
-
   static swapXY(
     contract: Contract,
     amount: Nat,
@@ -59,7 +40,7 @@ export class QuipuswapV3Methods {
   ): TransferParams {
     const transferParams = contract.methodsObject
       .y_to_x({
-        dx: amount.toFixed(),
+        dy: amount.toFixed(),
         deadline: deadline.toString(),
         min_dx: minExpectedReceive.toFixed(),
         to_dx: recipient.toString(),
@@ -71,38 +52,50 @@ export class QuipuswapV3Methods {
 
   static setPosition(
     contract: Contract,
-    params: quipuswapV3Types.SetPosition,
+    lowerTickIndex: Int,
+    upperTickIndex: Int,
+    lowerTickWitness: Int,
+    upperTickWitness: Int,
+    liquidity: Nat,
+    deadline: Timestamp,
+    maximumTokensContributedX: Nat,
+    maximumTokensContributedY: Nat,
   ): TransferParams {
-    const transferParams = contract.methodsObject
-      .set_position({
-        lower_tick_index: { i: params.lowerTickIndex.toFixed() },
-        upper_tick_index: { i: params.upperTickIndex.toFixed() },
-        lower_tick_witness: { i: params.lowerTickWitness.toFixed() },
-        upper_tick_witness: { i: params.upperTickWitness.toFixed() },
-        liquidity: params.liquidity.toFixed(),
-        deadline: params.deadline.toString(),
-        maxiumum_tokens_contributed: {
-          x: params.maximumTokensContributed.x.toFixed(),
-          y: params.maximumTokensContributed.y.toFixed(),
-        },
-      })
+    const transferParams = contract.methods
+      .set_position(
+        lowerTickIndex.toFixed(),
+        upperTickIndex.toFixed(),
+        lowerTickWitness.toFixed(),
+        upperTickWitness.toFixed(),
+        liquidity.toFixed(),
+        deadline.toString(),
+        maximumTokensContributedX.toFixed(),
+        maximumTokensContributedY.toFixed(),
+      )
       .toTransferParams();
     return transferParams;
   }
 
   static updatePosition(
     contract: Contract,
-    params: quipuswapV3Types.UpdatePosition,
+    positionId: Nat,
+    liquidityDelta: Nat,
+    toX: Address,
+    toY: Address,
+    deadline: Timestamp,
+    maximumTokensContributedX: Nat,
+    maximumTokensContributedY: Nat,
   ): TransferParams {
-    const transferParams = contract.methodsObject
-      .update_position({
-        position_id: params.positionId,
-        liquidity_delta: params.liquidityDelta,
-        to_x: params.toX,
-        to_y: params.toY,
-        deadline: params.deadline.toString(),
-        maximum_tokens_contributed: params.maximumTokensContributed,
-      })
+    const transferParams = contract.methods
+      .update_position(
+        positionId.toFixed(),
+        liquidityDelta.toFixed(),
+        toX.toString(),
+        toY.toString(),
+        deadline.toString(),
+        maximumTokensContributedX.toFixed(),
+        maximumTokensContributedY.toFixed(),
+      )
       .toTransferParams();
 
     return transferParams;
@@ -110,8 +103,9 @@ export class QuipuswapV3Methods {
 
   static transfer(
     contract: Contract,
-    params: fa2Types.Transfer[],
+    ...params: quipuswapV3Types.Transfer[]
   ): TransferParams {
+    params = [...params];
     const transferParams = params.map(param => {
       return {
         from_: param.from_.toString(),
@@ -130,11 +124,12 @@ export class QuipuswapV3Methods {
     return trParams;
   }
 
-  static updateOperator(
+  static updateOperators(
     contract: Contract,
-    params: fa2Types.UpdateOperator[],
+    ...params: quipuswapV3Types.updateOperators[]
   ): TransferParams {
-    const updateOperatorParams = params.map(param => {
+    params = [...params];
+    const updateOperatorsParams = params.map(param => {
       if ("add_operator" in param) {
         return {
           add_operator: {
@@ -154,7 +149,7 @@ export class QuipuswapV3Methods {
       }
     });
     const trParams = contract.methods
-      .update_operators(updateOperatorParams)
+      .update_operators(updateOperatorsParams)
       .toTransferParams();
     return trParams;
   }
@@ -202,22 +197,25 @@ export class QuipuswapV3 {
    * @param deadline The transaction won't be executed past this point
    * @param minExpectedReceive Minimum amount of tokens to receive. The transaction won't be executed if buying less than the given amount of Y tokens.
    * @param recipient Recipient of the tokens
-   * @returns TransactionOperation
+   * @returns TransferParam | WalletOperationBatch
    */
+  @extendCallQS
   async swapXY(
     amount: BigNumber,
     deadline: string,
     minExpectedReceive: BigNumber,
     recipient: string,
-  ): Promise<ReturnMethodType> {
+  ): Promise<QsReturn> {
     const transferParams = [
-      this.contract,
       new Nat(amount),
       new Timestamp(deadline),
       new Nat(minExpectedReceive),
       new Address(recipient),
     ];
-    return { callParams: transferParams, callback: QuipuswapV3Methods.swapXY };
+    return {
+      callParams: transferParams,
+      callback: QuipuswapV3Methods.swapXY,
+    } as unknown as TransferParams;
   }
 
   /**
@@ -226,22 +224,25 @@ export class QuipuswapV3 {
    * @param deadline The transaction won't be executed past this point
    * @param minExpectedReceive Minimum amount of tokens to receive. The transaction won't be executed if buying less than the given amount of X tokens.
    * @param recipient Recipient of the tokens
-   * @returns TransactionOperation
+   * @returns TransferParam | WalletOperationBatch
    */
+  @extendCallQS
   async swapYX(
     amount: BigNumber,
     deadline: string,
     minExpectedReceive: BigNumber,
     recipient: string,
-  ): Promise<ReturnMethodType> {
+  ): Promise<QsReturn> {
     const params = [
-      this.contract,
       new Nat(amount),
       new Timestamp(deadline),
       new Nat(minExpectedReceive),
       new Address(recipient),
     ];
-    return { callParams: params, callback: QuipuswapV3Methods.swapYX };
+    return {
+      callParams: params,
+      callback: QuipuswapV3Methods.swapYX,
+    } as unknown as TransferParams;
   }
 
   /**
@@ -254,8 +255,9 @@ export class QuipuswapV3 {
    * @param deadline The transaction won't be executed past this point
    * @param maximumTokensContributedX Maximum tokens contributed X
    * @param maximumTokensContributedY Maximum tokens contributed Y
-   * @returns TransactionOperation
+   * @returns TransferParam | WalletOperationBatch
    */
+  @extendCallQS
   async setPosition(
     lowerTickIndex: BigNumber,
     upperTickIndex: BigNumber,
@@ -265,21 +267,21 @@ export class QuipuswapV3 {
     deadline: string,
     maximumTokensContributedX: BigNumber,
     maximumTokensContributedY: BigNumber,
-  ): Promise<ReturnMethodType> {
-    const maximumTokensContributed = {
-      x: new Nat(maximumTokensContributedX),
-      y: new Nat(maximumTokensContributedY),
-    };
+  ): Promise<QsReturn> {
     const params = [
-      { i: new Int(lowerTickIndex) },
-      { i: new Int(upperTickIndex) },
-      { i: new Int(lowerTickWitness) },
-      { i: new Int(upperTickWitness) },
+      new Int(lowerTickIndex),
+      new Int(upperTickIndex),
+      new Int(lowerTickWitness),
+      new Int(upperTickWitness),
       new Nat(liquidity),
       new Timestamp(deadline),
-      maximumTokensContributed,
+      new Nat(maximumTokensContributedX),
+      new Nat(maximumTokensContributedY),
     ];
-    return { callParams: params, callback: QuipuswapV3Methods.setPosition };
+    return {
+      callParams: params,
+      callback: QuipuswapV3Methods.setPosition,
+    } as unknown as TransferParams;
   }
 
   /**
@@ -292,8 +294,9 @@ export class QuipuswapV3 {
    * @param deadline The transaction won't be executed past this point
    * @param maximumTokensContributedX Maximum tokens contributed X
    * @param maximumTokensContributedY Maximum tokens contributed Y
-   * @returns TransactionOperation
+   * @returns TransferParam | WalletOperationBatch
    */
+  @extendCallQS
   async updatePosition(
     positionId: BigNumber,
     liquidityDelta: BigNumber,
@@ -302,39 +305,20 @@ export class QuipuswapV3 {
     deadline: string,
     maximumTokensContributedX: BigNumber,
     maximumTokensContributedY: BigNumber,
-  ): Promise<ReturnMethodType> {
-    const maximumTokensContributed = {
-      x: new Nat(maximumTokensContributedX),
-      y: new Nat(maximumTokensContributedY),
-    };
-    const toXaddress = new Address(toX);
-    const positionIdN = new Nat(positionId);
-    const liquidityDeltaN = new Int(liquidityDelta);
-    const toYaddress = new Address(toY);
-    const fDeadline = new Timestamp(deadline);
+  ): Promise<QsReturn> {
     const params = [
-      {
-        positionId: positionIdN,
-        liquidityDelta: liquidityDeltaN,
-        toX: toXaddress,
-        toY: toYaddress,
-        fDeadline,
-        maximumTokensContributed,
-      },
+      new Nat(positionId),
+      new Int(liquidityDelta),
+      new Address(toX),
+      new Address(toY),
+      new Timestamp(deadline),
+      new Nat(maximumTokensContributedX),
+      new Nat(maximumTokensContributedY),
     ];
-    return { callParams: params, callback: QuipuswapV3Methods.updatePosition };
-  }
-
-  /** Increase Observation Count
-   * @param amount Amount of observations to add
-   * @returns TransactionOperation
-   *
-   */
-  async increaseObservationCount(amount: BigNumber): Promise<ReturnMethodType> {
     return {
-      callParams: [new Nat(amount)],
-      callback: QuipuswapV3Methods.increaseObservationCount,
-    };
+      callParams: params,
+      callback: QuipuswapV3Methods.updatePosition,
+    } as unknown as TransferParams;
   }
 
   /**
@@ -347,24 +331,58 @@ export class QuipuswapV3 {
    * @transferDestination amount Amount of tokens to transfer
    * @returns TransactionOperation
    */
-  async transfer(params: fa2Types.Transfer[]): Promise<ReturnMethodType> {
-    return { callParams: [params], callback: QuipuswapV3Methods.transfer };
+  @extendCallQS
+  async transfer(params: fa2Types.Transfer[]): Promise<QsReturn> {
+    const fa2TransferParams = params.map(param => {
+      return {
+        from_: new Address(param.from_),
+        txs: param.txs.map(tx => {
+          return {
+            to_: new Address(tx.to_),
+            token_id: new Nat(tx.token_id),
+            amount: new Nat(tx.amount.toFixed()),
+          };
+        }),
+      };
+    });
+    return {
+      callParams: fa2TransferParams,
+      callback: QuipuswapV3Methods.transfer,
+    } as unknown as TransferParams;
   }
 
   /** Update operator
    * @param params Fa2 update operator param is list of update operator
-   * @updateOperatorParam variant type or update operator or remove operator
+   * @updateOperatorsParam variant type or update operator or remove operator
    * @operatorParam owner Owner address
    * @operatorParam operator Operator address
    * @operatorParam token_id Token id
-   * @returns TransactionOperation
+   * @returns TransferParam | WalletOperationBatch
    */
-  async updateOperator(
-    params: fa2Types.UpdateOperator[],
-  ): Promise<ReturnMethodType> {
+  @extendCallQS
+  async updateOperators(params: fa2Types.updateOperators[]): Promise<QsReturn> {
+    const updateOperatorsParams = params.map(param => {
+      if ("add_operator" in param) {
+        return {
+          add_operator: {
+            owner: new Address(param.add_operator.owner),
+            operator: new Address(param.add_operator.operator),
+            token_id: new Nat(param.add_operator.token_id),
+          },
+        };
+      } else {
+        return {
+          remove_operator: {
+            owner: new Address(param.remove_operator.owner),
+            operator: new Address(param.remove_operator.operator),
+            token_id: new Nat(param.remove_operator.token_id),
+          },
+        };
+      }
+    });
     return {
-      callParams: [params],
-      callback: QuipuswapV3Methods.updateOperator,
-    };
+      callParams: updateOperatorsParams,
+      callback: QuipuswapV3Methods.updateOperators,
+    } as unknown as TransferParams;
   }
 }

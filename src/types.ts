@@ -20,7 +20,7 @@ export type CallSettings = {
   setPosition: CallMode;
   updatePosition: CallMode;
   transfer: CallMode;
-  updateOperator: CallMode;
+  updateOperators: CallMode;
   increaseObservationCount: CallMode;
 };
 
@@ -28,6 +28,8 @@ export type ReturnMethodType = {
   callParams: any[];
   callback: (contract: Contract, ...params: any[]) => TransferParams;
 };
+
+export type QsReturn = TransferParams | WalletOperationBatch;
 
 export namespace tezosTypes {
   export type TezosContract = ReturnType<TezosToolkit["contract"]["at"]>;
@@ -37,23 +39,23 @@ export namespace tezosTypes {
 
 export namespace fa2Types {
   export type TransferDestination = {
-    to_: Address;
-    token_id: Nat;
-    amount: Nat;
+    to_: string;
+    token_id: BigNumber;
+    amount: BigNumber;
   };
 
   export type Transfer = {
-    from_: Address;
+    from_: string;
     txs: TransferDestination[];
   };
 
   export type Operator = {
-    owner: Address;
-    operator: Address;
-    token_id: Nat;
+    owner: string;
+    operator: string;
+    token_id: BigNumber;
   };
 
-  export type UpdateOperator =
+  export type updateOperators =
     | { add_operator: Operator }
     | { remove_operator: Operator };
 }
@@ -244,11 +246,11 @@ export namespace quipuswapV3Types {
   export type Ladder = MichelsonMap<MichelsonMapKey, unknown>;
 
   export type SetPosition = {
-    lowerTickIndex: BigNumber;
-    upperTickIndex: BigNumber;
-    lowerTickWitness: BigNumber;
-    upperTickWitness: BigNumber;
-    liquidity: BigNumber;
+    lowerTickIndex: TickIndex;
+    upperTickIndex: TickIndex;
+    lowerTickWitness: TickIndex;
+    upperTickWitness: TickIndex;
+    liquidity: Nat;
     deadline: Timestamp;
     maximumTokensContributed: BalanceNat;
   };
@@ -319,4 +321,25 @@ export namespace quipuswapV3Types {
     // Exponents ladder for the calculation of 'half_bps_pow'
     ladder: Ladder;
   };
+
+  export type TransferDestination = {
+    to_: Address;
+    token_id: Nat;
+    amount: Nat;
+  };
+
+  export type Transfer = {
+    from_: Address;
+    txs: TransferDestination[];
+  };
+
+  export type Operator = {
+    owner: Address;
+    operator: Address;
+    token_id: Nat;
+  };
+
+  export type updateOperators =
+    | { add_operator: Operator }
+    | { remove_operator: Operator };
 }
