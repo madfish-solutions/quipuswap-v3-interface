@@ -9,11 +9,11 @@ import { BigNumber } from "bignumber.js";
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 import { Address, Nat, Int, Timestamp } from "./utils";
 
-export type CallMode =
-  | "returnParams"
-  | "returnOperation"
-  | "returnConfirmatedOperation";
-
+export enum CallMode {
+  returnParams = 0,
+  returnOperation = 1,
+  returnConfirmatedOperation = 2,
+}
 export type CallSettings = {
   swapXY: CallMode;
   swapYX: CallMode;

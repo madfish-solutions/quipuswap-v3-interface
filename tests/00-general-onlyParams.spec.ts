@@ -2,7 +2,7 @@ import { deepEqual, equal, rejects } from "assert";
 
 import { BigNumber } from "bignumber.js";
 import { QuipuswapV3 } from "../src";
-import { CallSettings } from "../src/types";
+import { CallMode, CallSettings } from "../src/types";
 import { migrate } from "./scripts/helpers";
 import { dexStorage } from "./storage/dexStorage";
 import { TezosToolkit } from "@taquito/taquito";
@@ -30,13 +30,13 @@ describe("Tests", async () => {
       "development",
     );
     const defaultCallSettings: CallSettings = {
-      swapXY: "returnParams",
-      swapYX: "returnParams",
-      setPosition: "returnParams",
-      updatePosition: "returnParams",
-      transfer: "returnParams",
-      updateOperators: "returnParams",
-      increaseObservationCount: "returnParams",
+      swapXY: CallMode.returnParams,
+      swapYX: CallMode.returnParams,
+      setPosition: CallMode.returnParams,
+      updatePosition: CallMode.returnParams,
+      transfer: CallMode.returnParams,
+      updateOperators: CallMode.returnParams,
+      increaseObservationCount: CallMode.returnParams,
     };
     qsV3 = await new QuipuswapV3(defaultCallSettings).init(tezos, contract!);
   });

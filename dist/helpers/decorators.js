@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.extendCallQS = exports.sendAndConfirmation = exports.send = exports.paramsOnly = void 0;
+const types_1 = require("../types");
 const utils_1 = require("../utils");
 const confirmation_1 = require("./confirmation");
 function paramsOnly(contract, callback, ...callParams) {
@@ -55,9 +56,9 @@ function extendCallQS(target, propertyKey, descriptor) {
         return __awaiter(this, void 0, void 0, function* () {
             const { callParams, callback } = yield f(...args);
             switch (this.callSettings[propertyKey]) {
-                case "returnOperation":
+                case types_1.CallMode.returnOperation:
                     return send(this.contract, this.tezos, callback, ...callParams);
-                case "returnConfirmatedOperation":
+                case types_1.CallMode.returnConfirmatedOperation:
                     return sendAndConfirmation(this.contract, this.tezos, callback, this.SYNC_INTERVAL, this.CONFIRM_TIMEOUT, ...callParams);
                 default:
                     return paramsOnly(this.contract, callback, ...callParams);

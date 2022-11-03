@@ -2,7 +2,11 @@ import { Contract, TezosToolkit, WalletOperationBatch, OperationBatch, TransferP
 import { BigNumber } from "bignumber.js";
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 import { Address, Nat, Int, Timestamp } from "./utils";
-export declare type CallMode = "returnParams" | "returnOperation" | "returnConfirmatedOperation";
+export declare enum CallMode {
+    returnParams = 0,
+    returnOperation = 1,
+    returnConfirmatedOperation = 2
+}
 export declare type CallSettings = {
     swapXY: CallMode;
     swapYX: CallMode;

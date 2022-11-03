@@ -1,11 +1,11 @@
-import { CallSettings } from "../types";
+import { CallMode, CallSettings } from "../types";
 
 export const defaultCallSettings: CallSettings = {
-  swapXY: "returnConfirmatedOperation",
-  swapYX: "returnConfirmatedOperation",
-  setPosition: "returnConfirmatedOperation",
-  updatePosition: "returnConfirmatedOperation",
-  transfer: "returnConfirmatedOperation",
-  updateOperators: "returnConfirmatedOperation",
-  increaseObservationCount: "returnConfirmatedOperation",
+  swapXY: CallMode.returnConfirmatedOperation,
+  swapYX: CallMode.returnConfirmatedOperation,
+  setPosition: CallMode.returnConfirmatedOperation,
+  updatePosition: CallMode.returnConfirmatedOperation,
+  transfer: CallMode.returnConfirmatedOperation,
+  updateOperators: CallMode.returnConfirmatedOperation,
+  increaseObservationCount: CallMode.returnConfirmatedOperation,
 };
