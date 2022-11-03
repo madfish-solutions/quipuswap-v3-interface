@@ -72,8 +72,8 @@ export function extendCallQS<T>(
           this.contract,
           this.tezos,
           callback,
-          this.SYNC_INTERVAL,
-          this.CONFIRM_TIMEOUT,
+          this.syncInterval,
+          this.confirmtaionTimeout,
           ...callParams,
         );
       default:

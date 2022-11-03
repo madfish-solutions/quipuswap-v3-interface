@@ -179,7 +179,11 @@ export class QuipuswapV3Storage {
 export class QuipuswapV3 {
   tezos: TezosToolkit;
   contract: Contract;
-  constructor(private callSettings: CallSettings = defaultCallSettings) {}
+  constructor(
+    private callSettings: CallSettings = defaultCallSettings,
+    public syncInterval: number = 0,
+    public confirmtaionTimeout: number = 500000,
+  ) {}
 
   async init(tezos: TezosToolkit, contractAddress: string) {
     this.tezos = tezos;
