@@ -36,7 +36,7 @@ export declare namespace fa2Types {
         operator: string;
         token_id: BigNumber;
     };
-    type updateOperators = {
+    type UpdateOperators = {
         add_operator: Operator;
     } | {
         remove_operator: Operator;
@@ -181,24 +181,5 @@ export declare namespace quipuswapV3Types {
         operators: MichelsonMap<MichelsonMapKey, unknown>;
         constants: Constants;
         ladder: Ladder;
-    };
-    type TransferDestination = {
-        to_: Address;
-        token_id: Nat;
-        amount: Nat;
-    };
-    type Transfer = {
-        from_: Address;
-        txs: TransferDestination[];
-    };
-    type Operator = {
-        owner: Address;
-        operator: Address;
-        token_id: Nat;
-    };
-    type updateOperators = {
-        add_operator: Operator;
-    } | {
-        remove_operator: Operator;
     };
 }
