@@ -122,8 +122,10 @@ class QuipuswapV3Storage {
 }
 exports.QuipuswapV3Storage = QuipuswapV3Storage;
 class QuipuswapV3 {
-    constructor(callSettings = defaults_1.defaultCallSettings) {
+    constructor(callSettings = defaults_1.defaultCallSettings, syncInterval = 0, confirmtaionTimeout = 500000) {
         this.callSettings = callSettings;
+        this.syncInterval = syncInterval;
+        this.confirmtaionTimeout = confirmtaionTimeout;
     }
     init(tezos, contractAddress) {
         return __awaiter(this, void 0, void 0, function* () {

@@ -59,7 +59,7 @@ function extendCallQS(target, propertyKey, descriptor) {
                 case types_1.CallMode.returnOperation:
                     return send(this.contract, this.tezos, callback, ...callParams);
                 case types_1.CallMode.returnConfirmatedOperation:
-                    return sendAndConfirmation(this.contract, this.tezos, callback, this.SYNC_INTERVAL, this.CONFIRM_TIMEOUT, ...callParams);
+                    return sendAndConfirmation(this.contract, this.tezos, callback, this.syncInterval, this.confirmtaionTimeout, ...callParams);
                 default:
                     return paramsOnly(this.contract, callback, ...callParams);
             }

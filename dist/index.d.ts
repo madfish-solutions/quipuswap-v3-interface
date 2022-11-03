@@ -21,9 +21,11 @@ export declare class QuipuswapV3Storage {
 }
 export declare class QuipuswapV3 {
     private callSettings;
+    syncInterval: number;
+    confirmtaionTimeout: number;
     tezos: TezosToolkit;
     contract: Contract;
-    constructor(callSettings?: CallSettings);
+    constructor(callSettings?: CallSettings, syncInterval?: number, confirmtaionTimeout?: number);
     init(tezos: TezosToolkit, contractAddress: string): Promise<this>;
     getStorage(): Promise<any>;
     /**
