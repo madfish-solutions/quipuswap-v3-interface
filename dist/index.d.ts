@@ -1,14 +1,14 @@
 import { Contract, TezosToolkit, TransferParams } from "@taquito/taquito";
 import { BigNumber } from "bignumber.js";
-import { fa2Types, quipuswapV3Types, CallSettings, QsReturn } from "./types";
+import { fa2Types, CallSettings, QsReturn } from "./types";
 import { Address, Nat, Int, Timestamp } from "./utils";
 export declare class QuipuswapV3Methods {
     static swapXY(contract: Contract, amount: Nat, deadline: Timestamp, minExpectedReceive: Nat, recipient: Address): TransferParams;
     static swapYX(contract: Contract, amount: Nat, deadline: Timestamp, minExpectedReceive: Nat, recipient: Address): TransferParams;
     static setPosition(contract: Contract, lowerTickIndex: Int, upperTickIndex: Int, lowerTickWitness: Int, upperTickWitness: Int, liquidity: Nat, deadline: Timestamp, maximumTokensContributedX: Nat, maximumTokensContributedY: Nat): TransferParams;
     static updatePosition(contract: Contract, positionId: Nat, liquidityDelta: Nat, toX: Address, toY: Address, deadline: Timestamp, maximumTokensContributedX: Nat, maximumTokensContributedY: Nat): TransferParams;
-    static transfer(contract: Contract, ...params: quipuswapV3Types.Transfer[]): TransferParams;
-    static updateOperators(contract: Contract, ...params: quipuswapV3Types.updateOperators[]): TransferParams;
+    static transfer(contract: Contract, ...params: fa2Types.Transfer[]): TransferParams;
+    static updateOperators(contract: Contract, ...params: fa2Types.UpdateOperators[]): TransferParams;
     static increaseObservationCount(contract: Contract, amount: Nat): TransferParams;
 }
 export declare class QuipuswapV3Storage {
@@ -89,5 +89,5 @@ export declare class QuipuswapV3 {
      * @operatorParam token_id Token id
      * @returns TransferParam | WalletOperationBatch
      */
-    updateOperators(params: fa2Types.updateOperators[]): Promise<QsReturn>;
+    updateOperators(params: fa2Types.UpdateOperators[]): Promise<QsReturn>;
 }

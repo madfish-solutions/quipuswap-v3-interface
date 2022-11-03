@@ -55,7 +55,7 @@ export namespace fa2Types {
     token_id: BigNumber;
   };
 
-  export type updateOperators =
+  export type UpdateOperators =
     | { add_operator: Operator }
     | { remove_operator: Operator };
 
@@ -335,25 +335,4 @@ export namespace quipuswapV3Types {
     // Exponents ladder for the calculation of 'half_bps_pow'
     ladder: Ladder;
   };
-
-  export type TransferDestination = {
-    to_: Address;
-    token_id: Nat;
-    amount: Nat;
-  };
-
-  export type Transfer = {
-    from_: Address;
-    txs: TransferDestination[];
-  };
-
-  export type Operator = {
-    owner: Address;
-    operator: Address;
-    token_id: Nat;
-  };
-
-  export type updateOperators =
-    | { add_operator: Operator }
-    | { remove_operator: Operator };
 }

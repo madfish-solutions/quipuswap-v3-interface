@@ -103,7 +103,7 @@ export class QuipuswapV3Methods {
 
   static transfer(
     contract: Contract,
-    ...params: quipuswapV3Types.Transfer[]
+    ...params: fa2Types.Transfer[]
   ): TransferParams {
     params = [...params];
     const transferParams = params.map(param => {
@@ -126,7 +126,7 @@ export class QuipuswapV3Methods {
 
   static updateOperators(
     contract: Contract,
-    ...params: quipuswapV3Types.updateOperators[]
+    ...params: fa2Types.UpdateOperators[]
   ): TransferParams {
     params = [...params];
     const updateOperatorsParams = params.map(param => {
@@ -360,7 +360,7 @@ export class QuipuswapV3 {
    * @returns TransferParam | WalletOperationBatch
    */
   @extendCallQS
-  async updateOperators(params: fa2Types.updateOperators[]): Promise<QsReturn> {
+  async updateOperators(params: fa2Types.UpdateOperators[]): Promise<QsReturn> {
     const updateOperatorsParams = params.map(param => {
       if ("add_operator" in param) {
         return {
