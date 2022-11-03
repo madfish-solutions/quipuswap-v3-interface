@@ -74,6 +74,20 @@ export namespace fa2Types {
   };
 }
 
+export namespace fa12Types {
+  export type UserFA12Info = {
+    balance: BigNumber;
+    allowances: MichelsonMap<MichelsonMapKey, unknown>;
+  };
+
+  export type FA12Storage = {
+    total_supply: BigNumber;
+    ledger: MichelsonMap<MichelsonMapKey, unknown>;
+    metadata: MichelsonMap<MichelsonMapKey, unknown>;
+    token_metadata: MichelsonMap<MichelsonMapKey, unknown>;
+  };
+}
+
 export namespace quipuswapV3Types {
   // export type Nat<T extends number> = number extends T
   //   ? never

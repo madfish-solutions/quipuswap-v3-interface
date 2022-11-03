@@ -59,6 +59,18 @@ export declare namespace fa2Types {
         total_minter_shares: BigNumber;
     };
 }
+export declare namespace fa12Types {
+    type UserFA12Info = {
+        balance: BigNumber;
+        allowances: MichelsonMap<MichelsonMapKey, unknown>;
+    };
+    type FA12Storage = {
+        total_supply: BigNumber;
+        ledger: MichelsonMap<MichelsonMapKey, unknown>;
+        metadata: MichelsonMap<MichelsonMapKey, unknown>;
+        token_metadata: MichelsonMap<MichelsonMapKey, unknown>;
+    };
+}
 export declare namespace quipuswapV3Types {
     type x80n = {
         x80: Nat;
