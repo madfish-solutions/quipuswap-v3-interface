@@ -1,5 +1,3 @@
-const env = require("../../env");
-
 import {
   OperationContentsAndResultOrigination,
   OperationContentsAndResult,
@@ -8,6 +6,11 @@ import {
   BlockResponse,
 } from "@taquito/rpc";
 import { TezosToolkit, OpKind } from "@taquito/taquito";
+
+// import dotenv from "dotenv";
+// import { resolve } from "path";
+// dotenv.config({ path: resolve(__dirname, "..", "..", ".env") });
+// dotenv.config();
 
 export type ConfirmOperationOptions = {
   initializedAt?: number;
@@ -54,7 +57,7 @@ export async function confirmOperation(
       }
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NETWORK === "development") {
       console.error(err);
     }
   }

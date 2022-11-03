@@ -4,7 +4,13 @@
   "author": "MadFish.Solutions",
   "license": "MIT",
   "description": "Quipuswap V3 SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
   "scripts": {
+    "build": "tsc",
     "start-sandbox": "docker run --rm --name my-sandbox -e block_time=1 --detach -p 8732:20000 oxheadalpha/flextesa:20220510 jakartabox start",
     "stop-sandbox": "docker kill my-sandbox",
     "test": "ts-mocha --bail"
@@ -26,7 +32,8 @@
     "child_process": "^1.0.2",
     "typescript": "^4.4.3",
     "yargs": "^17.2.1",
-    "ts-node": "^10.2.1"
+    "ts-node": "^10.2.1",
+    "dotenv": "10.0.0"
   },
   "devDependencies": {
     "@types/expect": "^24.3.0",

@@ -1,7 +1,5 @@
 import yargs from "yargs";
 
-import { compile, compileLambdas, runMigrations } from "./helpers";
-
 yargs
   .command(
     "compile [format] [contract] [contracts_dir] [output_dir] [ligo_version]",
@@ -33,59 +31,6 @@ yargs
         type: "string",
       },
     },
-    async (argv) => {
-      compile(
-        argv.format,
-        argv.contracts_list as string[],
-        argv.contracts_dir,
-        argv.output_dir,
-        argv.ligo_version
-      );
-    }
-  )
-  .command(
-    "compile-lambda [json] [contract]",
-    "compile lambdas for the specified contract",
-    {
-      json: {
-        description:
-          "input file relative path (with lambdas indexes and names)",
-        alias: "j",
-        type: "string",
-      },
-      contract: {
-        description: "input file realtive path (with lambdas Ligo code)",
-        alias: "c",
-        type: "string",
-      },
-    },
-    async (argv) => {
-      compileLambdas(argv.json, argv.contract);
-    }
-  )
-  .command(
-    "migrate [network] [from] [to]",
-    "run migrations",
-    {
-      from: {
-        description: "the migrations counter to start with",
-        alias: "f",
-        type: "number",
-      },
-      to: {
-        description: "the migrations counter to end with",
-        alias: "t",
-        type: "number",
-      },
-      network: {
-        description: "the network to deploy",
-        alias: "n",
-        type: "string",
-      },
-    },
-    async (argv) => {
-      runMigrations(argv.from, argv.to, argv.network);
-    }
   )
   .help()
   .strictCommands()

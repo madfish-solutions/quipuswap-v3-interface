@@ -1,5 +1,9 @@
 {
   "timeout": 500000,
   "extension": ["ts"],
-  "spec": "tests/*.spec.ts"
+  "spec": "tests/*.spec.ts",
+  "node-option": [
+    "experimental-specifier-resolution=node",
+    "loader=ts-node/esm"
+  ]
 }

@@ -1,22 +1,24 @@
-import { deepEqual, equal, rejects, strictEqual } from "assert";
-import chai from "chai";
+import { deepEqual, equal, rejects } from "assert";
 import { BigNumber } from "bignumber.js";
-import { QuipuswapV3 } from "../src";
-import { CallSettings } from "../src/types";
+import { QuipuswapV3 } from "./../src";
+import { CallSettings } from "./../src/types";
 import { migrate } from "./scripts/helpers";
 import { dexStorage } from "./storage/dexStorage";
-import { TezosToolkit, TransferParams } from "@taquito/taquito";
-import env from "../env";
+import { TezosToolkit } from "@taquito/taquito";
 import { InMemorySigner } from "@taquito/signer";
 import accounts from "./scripts/sandbox/accounts";
-import { Address, sendBatch, Timestamp } from "../src/utils";
+import dotenv from "dotenv";
+import { resolve } from "path";
+dotenv.config({ path: resolve(__dirname, "..", "..", ".env") });
+dotenv.config();
+
 const alice = accounts.alice;
 describe("Tests", async () => {
   let qsV3: QuipuswapV3;
   let tezos: TezosToolkit;
   before(async () => {
-    const signerAlice = new InMemorySigner(env.networks.development.secretKey);
-    tezos = new TezosToolkit(env.networks.development.rpc);
+    const signerAlice = new InMemorySigner(alice.sk);
+    tezos = new TezosToolkit(process.env.RPC!);
     tezos.setSignerProvider(signerAlice);
 
     const contract = await migrate(
