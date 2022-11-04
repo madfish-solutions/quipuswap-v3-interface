@@ -9,12 +9,8 @@ export function paramsOnly<T>(
   callback: (contract: Contract, ...params: T[]) => TransferParams,
   ...callParams: T[]
 ): TransferParams {
-  try {
-    const transferParams = callback(contract, ...callParams);
-    return transferParams;
-  } catch (error) {
-    console.log(error);
-  }
+  const transferParams = callback(contract, ...callParams);
+  return transferParams;
 }
 
 export async function send<T>(
@@ -23,13 +19,9 @@ export async function send<T>(
   callback: (contract: Contract, ...params: T[]) => TransferParams,
   ...callParams: T[]
 ): Promise<BatchWalletOperation> {
-  try {
-    const transferParams = callback(contract, ...callParams);
-    const operation = await sendBatch(tezos, [transferParams]);
-    return operation;
-  } catch (error) {
-    throw error;
-  }
+  const transferParams = callback(contract, ...callParams);
+  const operation = await sendBatch(tezos, [transferParams]);
+  return operation;
 }
 
 export async function sendAndConfirmation<T>(
@@ -40,19 +32,15 @@ export async function sendAndConfirmation<T>(
   CONFIRM_TIMEOUT: number,
   ...callParams: T[]
 ) {
-  try {
-    const transferParams = callback(contract, ...callParams);
-    const operation = await sendBatch(tezos, [transferParams]);
-    await confirmOperation(
-      tezos,
-      operation.opHash,
-      CONFIRM_TIMEOUT,
-      SYNC_INTERVAL,
-    );
-    return operation;
-  } catch (error) {
-    console.log(error);
-  }
+  const transferParams = callback(contract, ...callParams);
+  const operation = await sendBatch(tezos, [transferParams]);
+  await confirmOperation(
+    tezos,
+    operation.opHash,
+    CONFIRM_TIMEOUT,
+    SYNC_INTERVAL,
+  );
+  return operation;
 }
 
 export function extendCallQS<T>(
