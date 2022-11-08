@@ -14,39 +14,35 @@ const types_1 = require("../types");
 const utils_1 = require("../utils");
 const confirmation_1 = require("./confirmation");
 function paramsOnly(contract, callback, ...callParams) {
-    try {
-        const transferParams = callback(contract, ...callParams);
-        return transferParams;
-    }
-    catch (error) {
-        console.log(error);
-    }
+    const transferParams = callback(contract, ...callParams);
+    return transferParams;
 }
 exports.paramsOnly = paramsOnly;
 function send(contract, tezos, callback, ...callParams) {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const transferParams = callback(contract, ...callParams);
-            const operation = yield (0, utils_1.sendBatch)(tezos, [transferParams]);
-            return operation;
-        }
-        catch (error) {
-            throw error;
-        }
+        const transferParams = callback(contract, ...callParams);
+        const operation = yield (0, utils_1.sendBatch)(tezos, [transferParams]);
+        return operation;
     });
 }
 exports.send = send;
 function sendAndConfirmation(contract, tezos, callback, SYNC_INTERVAL, CONFIRM_TIMEOUT, ...callParams) {
     return __awaiter(this, void 0, void 0, function* () {
+        const transferParams = callback(contract, ...callParams);
+        let operation;
         try {
-            const transferParams = callback(contract, ...callParams);
-            const operation = yield (0, utils_1.sendBatch)(tezos, [transferParams]);
-            yield (0, confirmation_1.confirmOperation)(tezos, operation.opHash, CONFIRM_TIMEOUT, SYNC_INTERVAL);
-            return operation;
+            operation = yield (0, utils_1.sendBatch)(tezos, [transferParams]);
         }
         catch (error) {
-            console.log(error);
+            throw error;
         }
+        try {
+            yield (0, confirmation_1.confirmOperation)(tezos, operation.opHash, CONFIRM_TIMEOUT, SYNC_INTERVAL);
+        }
+        catch (error) {
+            throw error;
+        }
+        return operation;
     });
 }
 exports.sendAndConfirmation = sendAndConfirmation;
