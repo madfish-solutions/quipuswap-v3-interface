@@ -33,14 +33,18 @@ export async function sendAndConfirmation<T>(
   ...callParams: T[]
 ) {
   const transferParams = callback(contract, ...callParams);
-  const operation = await sendBatch(tezos, [transferParams]);
-  await confirmOperation(
-    tezos,
-    operation.opHash,
-    CONFIRM_TIMEOUT,
-    SYNC_INTERVAL,
-  );
-  return operation;
+  try {
+    const operation = await sendBatch(tezos, [transferParams]);
+    await confirmOperation(
+      tezos,
+      operation.opHash,
+      CONFIRM_TIMEOUT,
+      SYNC_INTERVAL,
+    );
+    return operation;
+  } catch (error) {
+    throw error;
+  }
 }
 
 export function extendCallQS<T>(
