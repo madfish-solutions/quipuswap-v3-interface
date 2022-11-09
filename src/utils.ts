@@ -116,7 +116,7 @@ export class Timestamp {
     let newTimestamp = Number(timestamp);
 
     if (isNaN(newTimestamp)) {
-      newTimestamp = Date.parse(timestamp);
+      newTimestamp = Date.parse(timestamp) / 1000;
       if (isNaN(newTimestamp)) {
         throw new Error(`Invalid timestamp: ${timestamp}`);
       }
