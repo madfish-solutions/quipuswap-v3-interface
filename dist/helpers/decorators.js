@@ -29,19 +29,8 @@ exports.send = send;
 function sendAndConfirmation(contract, tezos, callback, SYNC_INTERVAL, CONFIRM_TIMEOUT, ...callParams) {
     return __awaiter(this, void 0, void 0, function* () {
         const transferParams = callback(contract, ...callParams);
-        let operation;
-        try {
-            operation = yield (0, utils_1.sendBatch)(tezos, [transferParams]);
-        }
-        catch (error) {
-            throw error;
-        }
-        try {
-            yield (0, confirmation_1.confirmOperation)(tezos, operation.opHash, CONFIRM_TIMEOUT, SYNC_INTERVAL);
-        }
-        catch (error) {
-            throw error;
-        }
+        const operation = yield (0, utils_1.sendBatch)(tezos, [transferParams]);
+        yield (0, confirmation_1.confirmOperation)(tezos, operation.opHash, CONFIRM_TIMEOUT, SYNC_INTERVAL);
         return operation;
     });
 }
