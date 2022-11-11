@@ -320,7 +320,8 @@ class QuipuswapV3 {
     observe(timestamps = []) {
         return __awaiter(this, void 0, void 0, function* () {
             if (timestamps.length === 0) {
-                const now = Date.parse((yield this.tezos.rpc.getBlockHeader()).timestamp) / 1000;
+                const ts = (yield this.tezos.rpc.getBlockHeader()).timestamp;
+                const now = new utils_1.Timestamp(ts).toString();
                 return yield this.contract.views.observe([now]).read();
             }
             return yield this.contract.views.observe(timestamps).read();

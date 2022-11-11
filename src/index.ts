@@ -403,8 +403,9 @@ export class QuipuswapV3 {
     timestamps: string[] = [],
   ): Promise<quipuswapV3Types.CumulativesValue> {
     if (timestamps.length === 0) {
-      const now =
-        Date.parse((await this.tezos.rpc.getBlockHeader()).timestamp) / 1000;
+      const ts = (await this.tezos.rpc.getBlockHeader()).timestamp;
+      const now = new Timestamp(ts).toString();
+
       return await this.contract.views.observe([now]).read();
     }
 
