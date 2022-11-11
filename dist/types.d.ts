@@ -198,4 +198,8 @@ export declare namespace quipuswapV3Types {
         constants: Constants;
         ladder: Ladder;
     };
+    type CumulativesValue = {
+        tick_cumulative: Int;
+        seconds_per_liquidity_cumulative: x128n;
+    };
 }

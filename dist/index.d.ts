@@ -1,6 +1,6 @@
 import { Contract, TezosToolkit, TransferParams } from "@taquito/taquito";
 import { BigNumber } from "bignumber.js";
-import { fa2Types, CallSettings, QsReturn } from "./types";
+import { fa2Types, quipuswapV3Types, CallSettings, QsReturn } from "./types";
 import { Address, Nat, Int, Timestamp } from "./utils";
 export declare class QuipuswapV3Methods {
     static swapXY(contract: Contract, amount: Nat, deadline: Timestamp, minExpectedReceive: Nat, recipient: Address): TransferParams;
@@ -47,7 +47,7 @@ export declare class QuipuswapV3 {
      */
     swapYX(amount: BigNumber, deadline: string, minExpectedReceive: BigNumber, recipient: string): Promise<QsReturn>;
     /**
-     * Set position
+     * Creates a new position in the given range.
      * @param lowerTickIndex Lower tick index
      * @param upperTickIndex Upper tick index
      * @param lowerTickWitness Lower tick witness
@@ -60,7 +60,7 @@ export declare class QuipuswapV3 {
      */
     setPosition(lowerTickIndex: BigNumber, upperTickIndex: BigNumber, lowerTickWitness: BigNumber, upperTickWitness: BigNumber, liquidity: BigNumber, deadline: string, maximumTokensContributedX: BigNumber, maximumTokensContributedY: BigNumber): Promise<QsReturn>;
     /**
-     * Update position
+     * Updates an existing position.
      * @param positionId Position id
      * @param liquidityDelta Liquidity delta. If adding a delta (that can be negative) would result in a negative liquidity value,
      * the call will abort.
@@ -92,4 +92,14 @@ export declare class QuipuswapV3 {
      * @returns TransferParam | WalletOperationBatch
      */
     updateOperators(params: fa2Types.UpdateOperators[]): Promise<QsReturn>;
+    /** Get Oracle values at certain given range. Reimplemented from Haskell Code below this line.
+     * observe cfmm = do
+    currentTime <- getNow
+    consumer <- originateSimple @[CumulativesValue] "observe-consumer" [] contractConsumer
+    call cfmm (Call @"Observe") $ mkView [currentTime] consumer
+    getStorage consumer >>= \case
+      [[cv]] -> pure cv
+      _ -> failure "Expected to get exactly 1 CumulativeValue"
+    */
+    observe(timestamps?: string[]): Promise<quipuswapV3Types.CumulativesValue>;
 }

@@ -184,7 +184,7 @@ class QuipuswapV3 {
         });
     }
     /**
-     * Set position
+     * Creates a new position in the given range.
      * @param lowerTickIndex Lower tick index
      * @param upperTickIndex Upper tick index
      * @param lowerTickWitness Lower tick witness
@@ -214,7 +214,7 @@ class QuipuswapV3 {
         });
     }
     /**
-     * Update position
+     * Updates an existing position.
      * @param positionId Position id
      * @param liquidityDelta Liquidity delta. If adding a delta (that can be negative) would result in a negative liquidity value,
      * the call will abort.
@@ -306,6 +306,24 @@ class QuipuswapV3 {
                 callParams: updateOperatorsParams,
                 callback: QuipuswapV3Methods.updateOperators,
             };
+        });
+    }
+    /** Get Oracle values at certain given range. Reimplemented from Haskell Code below this line.
+     * observe cfmm = do
+    currentTime <- getNow
+    consumer <- originateSimple @[CumulativesValue] "observe-consumer" [] contractConsumer
+    call cfmm (Call @"Observe") $ mkView [currentTime] consumer
+    getStorage consumer >>= \case
+      [[cv]] -> pure cv
+      _ -> failure "Expected to get exactly 1 CumulativeValue"
+    */
+    observe(timestamps = []) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (timestamps.length === 0) {
+                const now = Date.parse((yield this.tezos.rpc.getBlockHeader()).timestamp) / 1000;
+                return yield this.contract.views.observe([now]).read();
+            }
+            return yield this.contract.views.observe(timestamps).read();
         });
     }
 }

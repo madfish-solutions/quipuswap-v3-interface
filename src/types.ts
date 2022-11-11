@@ -349,4 +349,9 @@ export namespace quipuswapV3Types {
     // Exponents ladder for the calculation of 'half_bps_pow'
     ladder: Ladder;
   };
+
+  export type CumulativesValue = {
+    tick_cumulative: Int;
+    seconds_per_liquidity_cumulative: x128n;
+  };
 }
