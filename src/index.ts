@@ -6,10 +6,13 @@ import {
   CallSettings,
   ReturnMethodType,
   QsReturn,
+  Nat,
+  Int,
 } from "./types";
-import { Address, Nat, Int, Timestamp } from "./utils";
+import { Address, Timestamp } from "./utils";
 import { defaultCallSettings } from "./helpers/defaults";
 import { extendCallQS } from "./helpers/decorators";
+import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 
 export class QuipuswapV3Methods {
   static swapXY(
@@ -171,8 +174,42 @@ export class QuipuswapV3Storage {
    * @param contract
    * @returns
    */
-  static async getStorage(contract: Contract): Promise<unknown> {
-    return contract.storage();
+  static async getStorage(
+    contract: Contract,
+  ): Promise<quipuswapV3Types.Storage> {
+    const origStorage = (await contract.storage()) as any;
+    return {
+      liquidity: new Nat(origStorage.liquidity),
+      sqrtPrice: new quipuswapV3Types.x80n(origStorage.sqrt_price),
+      curTickIndex: new Int(origStorage.cur_tick_index),
+      curTickWitness: new Int(origStorage.cur_tick_witness),
+      feeGrowth: {
+        x: new quipuswapV3Types.x80n(origStorage.fee_growth.x),
+        y: new quipuswapV3Types.x80n(origStorage.fee_growth.y),
+      },
+      ticks: new quipuswapV3Types.TickMap(origStorage.ticks),
+      positions: new quipuswapV3Types.PositionMap(origStorage.positions),
+
+      cumulativesBuffer: {
+        map: origStorage.cumulatives_buffer,
+        first: new Nat(origStorage.cumulatives_buffer.first),
+        last: new Nat(origStorage.cumulatives_buffer.last),
+        reservedLength: new Nat(origStorage.cumulatives_buffer.reserved_length),
+      },
+      metadata: origStorage.metadata,
+      newPositionId: new Nat(origStorage.new_position_id),
+      operators: origStorage.operators,
+      constants: {
+        feeBps: new Nat(origStorage.constants.fee_bps),
+        tokenX: origStorage.constants.token_x,
+        tokenY: origStorage.constants.token_y,
+        tickSpacing: new Nat(origStorage.constants.tick_spacing),
+      },
+      ladder: new quipuswapV3Types.LadderMap(origStorage.ladder),
+    };
+  }
+  static async getRawStorage(contract: Contract): Promise<any> {
+    return await contract.storage();
   }
 }
 
@@ -191,8 +228,12 @@ export class QuipuswapV3 {
     return this;
   }
 
-  async getStorage(): Promise<any> {
+  async getStorage(): Promise<quipuswapV3Types.Storage> {
     return QuipuswapV3Storage.getStorage(this.contract);
+  }
+
+  async getRawStorage(): Promise<any> {
+    return QuipuswapV3Storage.getRawStorage(this.contract);
   }
 
   /**
