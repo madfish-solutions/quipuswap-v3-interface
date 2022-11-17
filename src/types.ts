@@ -7,7 +7,83 @@ import {
 } from "@taquito/taquito";
 import { BigNumber } from "bignumber.js";
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
-import { Address, Nat, Int, Timestamp } from "./utils";
+import { Address, Timestamp } from "./utils";
+import { shiftLeft, shiftRight } from "./helpers/math";
+
+/**
+ * @description Type class to represent a Tezos Nat type which is a BigNumber
+ * @example
+ * const nat = new Nat('100')
+ * nat.toNumber() // 100
+ * nat.toString() // '100'
+ * nat.plus(1).toString() // '101'
+ * nat.toPow(2).toString() // '10000'
+ * nat.fromPow(2).toString() // '1'
+ */
+export class Nat extends BigNumber {
+  // _nat: BigNumber;
+  constructor(number: BigNumber | number | string) {
+    number = new BigNumber(number);
+    if (number < new BigNumber(0) || !number.isInteger() || number.isNaN()) {
+      throw new Error(`Invalid nat: ${number.toString()}`);
+    }
+    super(number);
+  }
+
+  fromPow(
+    precision: number,
+    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  ): BigNumber {
+    return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
+  }
+  toPow(
+    precision: number,
+    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  ): BigNumber {
+    return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
+  }
+}
+
+/**
+ * @description Type class to represent a Tezos Int type which is a BigNumber
+ * @example
+ * const int = new Int('new BigNumber(-100)')
+ * int.toString() // '-100'
+ * int.toFixed() // '-100'
+ * int.fromPrecision(6) // BigNumber(-0.0001)
+ * int.toPrecision(6) // BigNumber(-1000000)
+ */
+
+export class Int extends BigNumber {
+  constructor(number: BigNumber | number | string) {
+    number = new BigNumber(number);
+    if (!number.isInteger() || number.isNaN()) {
+      throw new Error(`Invalid int: ${number}`);
+    }
+    super(number);
+  }
+
+  fromPow(
+    precision: number,
+    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  ): BigNumber {
+    return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
+  }
+  toPow(
+    precision: number,
+    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  ): BigNumber {
+    return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
+      roundingMode,
+    );
+  }
+}
 
 export enum CallMode {
   returnParams = 0,
@@ -89,25 +165,63 @@ export namespace fa12Types {
 }
 
 export namespace quipuswapV3Types {
-  // export type Nat<T extends number> = number extends T
-  //   ? never
-  //   : `${T}` extends `-${string}` | `${string}.${string}`
-  //   ? never
-  //   : T;
-  // // Keeps a positive value with -2^80 precision.
-  // export function nat<N extends number>(n: Nat<N>): number {
-  //   return -n;
-  // }
-  export type x80n = { x80: Nat };
+  export type Fa2Token = {
+    fa2: { token_id: BigNumber; token_address: Address };
+  };
+  export type Fa12Token = { fa12: Address };
 
-  // Keeps a value with -2^128 precision.
-  export type x128 = { x128: Int };
+  export type TokenType = Fa2Token | Fa12Token;
+  /**
+   * Keeps a positive value with -2^80 precision.
+   */
+  export class x80n extends Nat {
+    constructor(number: BigNumber | number | string) {
+      super(number);
+    }
+    static init(number: BigNumber | number | string): x80n {
+      number = new BigNumber(number);
+      return new x80n(number.multipliedBy(new BigNumber(2).pow(80)));
+    }
+    toNormal(): BigNumber {
+      return shiftRight(this, new BigNumber(80));
+    }
+  }
 
-  // Keeps a positive value with -2^128 precision.
-  export type x128n = { x128: Nat };
+  /**
+   *  Keeps a value with -2^128 precision.
+   *
+   */
+  export class x128 extends Int {
+    constructor(number: BigNumber | number | string) {
+      super(number);
+    }
+    static init(number: BigNumber | number | string): x128 {
+      number = new BigNumber(number);
+      return new x128(number.multipliedBy(new BigNumber(2).pow(128)));
+    }
+    toNormal(): BigNumber {
+      return shiftRight(this, new BigNumber(128));
+    }
+  }
+
+  /**
+   * Keeps a positive value with -2^128 precision.
+   */
+  export class x128n extends Nat {
+    constructor(number: BigNumber | number | string) {
+      super(number);
+    }
+    static init(number: BigNumber | number | string): x128n {
+      number = new BigNumber(number);
+      return new x128n(number.multipliedBy(new BigNumber(2).pow(128)));
+    }
+    toNormal(): BigNumber {
+      return shiftRight(this, new BigNumber(128));
+    }
+  }
 
   // Tick types, representing pieces of the curve offered between different tick segments.
-  export type TickIndex = { i: Int };
+  export type TickIndex = Int;
 
   export type BalanceNat = { x: Nat; y: Nat };
   export type BalanceNatX128 = { x: x128n; y: x128n };
@@ -129,12 +243,12 @@ export namespace quipuswapV3Types {
     //     (i.e. when the current tick index `i_c` becomes greater than this tick),
     //     or subtracted when the tick is crossed going down.
     //
-    liquidity_net: Int;
+    liquidityNet: Int;
 
     //  Numbers of positions with an edge at the given tick.
     //     Used for garbage collection.
     //
-    n_positions: Nat;
+    nPositions: Nat;
 
     //  When the current tick index `i_c` is below this tick, this field tracks
     //     the overall number of seconds `i_c` spent above or at this tick.
@@ -162,36 +276,36 @@ export namespace quipuswapV3Types {
     //     This field helps to evaluate, for instance, how many seconds i_c
     //     has spent in an any given ticks range.
     //
-    seconds_outside: Nat;
+    secondsOutside: Nat;
 
     //  Tick indices accumulator i_o, it keeps track of time-weighted sum of
     //     tick indices, but accounts them only for "outside" periods.
     //     For the intuition for "outside" word, see `seconds_outside`.
     //
-    tick_cumulative_outside: Int;
+    tickCumulativeOutside: Int;
 
     //  Overall number of fees f_o that were accumulated during the period
     //     when the current tick index i_c was below (or above) this tick.
 
     //     For intuition for "outside" word, see `seconds_outside`.
     //
-    fee_growth_outside: BalanceNatX128;
+    feeGrowthOutside: BalanceNatX128;
 
     //  Seconds-weighted 1/L value accumulator s_lo, it accounts only for
     //     "outside" periods. For intuition for "outside" word, see `seconds_outside`.
 
     //     This helps us to implement liquidity oracle.
     //
-    seconds_per_liquidity_outside: x128n;
+    secondsPerLiquidityOutside: x128n;
 
     // sqrt(P) = sqrt(X/Y) associated with this tick.
-    sqrt_price: x80n;
+    sqrtPrice: x80n;
   };
 
   export type PositionState = {
     // Position edge tick indices
-    lower_tick_index: TickIndex;
-    upper_tick_index: TickIndex;
+    lowerTickIndex: TickIndex;
+    upperTickIndex: TickIndex;
 
     // The position's owner.
     // By default - position's creator, but ownership can be transferred later.
@@ -202,7 +316,7 @@ export namespace quipuswapV3Types {
 
     // Total fees earned by the position at the moment of last fees collection for this position.
     // This helps to evaluate the next portion of fees to collect.
-    fee_growth_inside_last: BalanceIntX128;
+    feeGrowthInsideLast: BalanceIntX128;
   };
 
   export type TickCumulative = {
@@ -255,17 +369,14 @@ export namespace quipuswapV3Types {
     // We need to have initialized slots with trash because when the size of
     // the map increases, someone has to pay for the storage diff.
     // And we want it to be paid by the one who requested the extension.
-    reserved_length: Nat;
+    reservedLength: Nat;
   };
 
   export type Constants = {
-    fee_bps: Nat;
-    ctez_burn_fee_bps: Nat;
-    x_token_id: Nat;
-    y_token_id: Nat;
-    x_token_address: Address;
-    y_token_address: Address;
-    tick_spacing: Nat;
+    feeBps: Nat;
+    tokenX: TokenType;
+    tokenY: TokenType;
+    tickSpacing: Nat;
   };
 
   //// See defaults.mligo for more info
@@ -283,6 +394,102 @@ export namespace quipuswapV3Types {
     maximumTokensContributed: BalanceNat;
   };
 
+  export class TickMap {
+    constructor(public map: MichelsonMap<MichelsonMapKey, unknown>) {}
+    async get(key: TickIndex): Promise<TickState> {
+      const st: any = await this.map.get(key.toString());
+      return {
+        prev: new Int(st.prev),
+        next: new Int(st.next),
+        liquidityNet: new Int(st.liquidity_net),
+        secondsOutside: new Nat(st.seconds_outside),
+        tickCumulativeOutside: new Int(st.tick_cumulative_outside),
+        feeGrowthOutside: {
+          x: new x128n(st.fee_growth_outside.x),
+          y: new x128n(st.fee_growth_outside.y),
+        },
+        secondsPerLiquidityOutside: new x128n(st.seconds_per_liquidity_outside),
+        sqrtPrice: new x80n(st.sqrt_price),
+        nPositions: new Nat(st.n_positions),
+      };
+    }
+  }
+  export class PositionMap {
+    constructor(public map: MichelsonMap<MichelsonMapKey, unknown>) {}
+    async get(key: Nat): Promise<PositionState> {
+      const st: any = await this.map.get(key.toString());
+      return {
+        lowerTickIndex: new Int(st.lower_tick_index),
+        upperTickIndex: new Int(st.upper_tick_index),
+        owner: new Address(st.owner),
+        liquidity: new Nat(st.liquidity),
+        feeGrowthInsideLast: {
+          x: new x128n(st.fee_growth_inside_last.x),
+          y: new x128n(st.fee_growth_inside_last.y),
+        },
+      };
+    }
+  }
+  export class LadderMap {
+    constructor(public map: MichelsonMap<MichelsonMapKey, unknown>) {}
+    async get(key: Ladder_key): Promise<Fixed_point> {
+      return (await this.map.get({
+        exp: key.exp.toString(),
+        positive: key.positive,
+      })) as Fixed_point;
+    }
+  }
+
+  export type Storage = {
+    //// Virtual liquidity, the value L for which the curve locally looks like x * y = L^2.
+    liquidity: Nat;
+
+    // Square root of the virtual price, the value P for which P = x / y.
+    sqrtPrice: x80n;
+
+    // Index of the highest tick corresponding to a price less than or equal to sqrt_price^2,
+    // does not necessarily corresponds to a boundary.
+    // Article's notation: i_c, tick.
+    curTickIndex: TickIndex;
+
+    // The highest initialized tick lower than or equal to i_c.
+    curTickWitness: TickIndex;
+
+    // The total amount of fees that have been earned per unit of virtual liquidity (L),
+    // over the entire history of the contract.
+    feeGrowth: BalanceNatX128;
+
+    // States of all initialized ticks.
+    ticks: TickMap;
+
+    // States of positions (with non-zero liquidity).
+    positions: PositionMap;
+
+    // Cumulative values stored for the recent timestamps.
+    cumulativesBuffer: TimedCumulativesBuffer;
+    // TZIP-16 metadata.
+    metadata: MichelsonMap<MichelsonMapKey, unknown>;
+
+    // Incremental position id to be assigned to new position.
+    newPositionId: BigNumber;
+
+    // FA2-related
+    operators: MichelsonMap<MichelsonMapKey, unknown>;
+
+    // Constants for options that are settable at origiBigNumberion
+    constants: Constants;
+
+    // Exponents ladder for the calculation of 'half_bps_pow'
+    ladder: LadderMap;
+  };
+
+  export type CumulativesValue = {
+    tick_cumulative: Int;
+    seconds_per_liquidity_cumulative: x128n;
+  };
+}
+
+export namespace quipuswapV3CallTypes {
   export type UpdatePosition = {
     /**
      * positionId - position id
@@ -304,54 +511,6 @@ export namespace quipuswapV3Types {
     /** The maximum number of tokens to contribute.
         If a higher amount is required, the entrypoint fails.
     */
-    maximumTokensContributed: BalanceNat;
-  };
-
-  export type Storage = {
-    //// Virtual liquidity, the value L for which the curve locally looks like x * y = L^2.
-    liquidity: Nat;
-
-    // Square root of the virtual price, the value P for which P = x / y.
-    sqrt_price: x80n;
-
-    // Index of the highest tick corresponding to a price less than or equal to sqrt_price^2,
-    // does not necessarily corresponds to a boundary.
-    // Article's notation: i_c, tick.
-    cur_tick_index: TickIndex;
-
-    // The highest initialized tick lower than or equal to i_c.
-    cur_tick_witness: TickIndex;
-
-    // The total amount of fees that have been earned per unit of virtual liquidity (L),
-    // over the entire history of the contract.
-    fee_growth: BalanceNatX128;
-
-    // States of all initialized ticks.
-    ticks: MichelsonMap<MichelsonMapKey, unknown>;
-
-    // States of positions (with non-zero liquidity).
-    positions: MichelsonMap<MichelsonMapKey, unknown>;
-
-    // Cumulative values stored for the recent timestamps.
-    cumulatives_buffer: TimedCumulativesBuffer;
-    // TZIP-16 metadata.
-    metadata: MichelsonMap<MichelsonMapKey, unknown>;
-
-    // Incremental position id to be assigned to new position.
-    new_position_id: BigNumber;
-
-    // FA2-related
-    operators: MichelsonMap<MichelsonMapKey, unknown>;
-
-    // Constants for options that are settable at origiBigNumberion
-    constants: Constants;
-
-    // Exponents ladder for the calculation of 'half_bps_pow'
-    ladder: Ladder;
-  };
-
-  export type CumulativesValue = {
-    tick_cumulative: Int;
-    seconds_per_liquidity_cumulative: x128n;
+    maximumTokensContributed: quipuswapV3Types.BalanceNat;
   };
 }

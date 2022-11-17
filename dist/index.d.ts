@@ -1,7 +1,7 @@
 import { Contract, TezosToolkit, TransferParams } from "@taquito/taquito";
 import { BigNumber } from "bignumber.js";
-import { fa2Types, quipuswapV3Types, CallSettings, QsReturn } from "./types";
-import { Address, Nat, Int, Timestamp } from "./utils";
+import { fa2Types, quipuswapV3Types, CallSettings, QsReturn, Nat, Int } from "./types";
+import { Address, Timestamp } from "./utils";
 export declare class QuipuswapV3Methods {
     static swapXY(contract: Contract, amount: Nat, deadline: Timestamp, minExpectedReceive: Nat, recipient: Address): TransferParams;
     static swapYX(contract: Contract, amount: Nat, deadline: Timestamp, minExpectedReceive: Nat, recipient: Address): TransferParams;
@@ -17,7 +17,8 @@ export declare class QuipuswapV3Storage {
      * @param contract
      * @returns
      */
-    static getStorage(contract: Contract): Promise<unknown>;
+    static getStorage(contract: Contract): Promise<quipuswapV3Types.Storage>;
+    static getRawStorage(contract: Contract): Promise<any>;
 }
 export declare class QuipuswapV3 {
     private callSettings;
@@ -27,7 +28,8 @@ export declare class QuipuswapV3 {
     contract: Contract;
     constructor(callSettings?: CallSettings, syncInterval?: number, confirmtaionTimeout?: number);
     init(tezos: TezosToolkit, contractAddress: string): Promise<this>;
-    getStorage(): Promise<any>;
+    getStorage(): Promise<quipuswapV3Types.Storage>;
+    getRawStorage(): Promise<any>;
     /**
      * Swap X tokens for Y tokens
      * @param amount Amount of tokens to swap

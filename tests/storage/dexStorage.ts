@@ -7,16 +7,14 @@ const cumulativesBuffer: qsTypes.TimedCumulativesBuffer = {
   map: MichelsonMap.fromLiteral({}),
   first: new BigNumber(0),
   last: new BigNumber(0),
-  reserved_length: new BigNumber(0),
+  reservedLength: new BigNumber(0),
 } as qsTypes.TimedCumulativesBuffer;
 
 const constants: qsTypes.Constants = {
   fee_bps: new BigNumber(0),
   ctez_burn_fee_bps: new BigNumber(0),
-  x_token_id: new BigNumber(0),
-  y_token_id: new BigNumber(0),
-  x_token_address: "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb",
-  y_token_address: "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb",
+  token_x: { fa12: "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" },
+  token_y: { fa12: "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb" },
   tick_spacing: new BigNumber(0),
 } as unknown as qsTypes.Constants;
 

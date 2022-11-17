@@ -1,7 +1,36 @@
 import { Contract, TezosToolkit, WalletOperationBatch, OperationBatch, TransferParams } from "@taquito/taquito";
 import { BigNumber } from "bignumber.js";
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
-import { Address, Nat, Int, Timestamp } from "./utils";
+import { Address, Timestamp } from "./utils";
+/**
+ * @description Type class to represent a Tezos Nat type which is a BigNumber
+ * @example
+ * const nat = new Nat('100')
+ * nat.toNumber() // 100
+ * nat.toString() // '100'
+ * nat.plus(1).toString() // '101'
+ * nat.toPow(2).toString() // '10000'
+ * nat.fromPow(2).toString() // '1'
+ */
+export declare class Nat extends BigNumber {
+    constructor(number: BigNumber | number | string);
+    fromPow(precision: number, roundingMode?: BigNumber.RoundingMode): BigNumber;
+    toPow(precision: number, roundingMode?: BigNumber.RoundingMode): BigNumber;
+}
+/**
+ * @description Type class to represent a Tezos Int type which is a BigNumber
+ * @example
+ * const int = new Int('new BigNumber(-100)')
+ * int.toString() // '-100'
+ * int.toFixed() // '-100'
+ * int.fromPrecision(6) // BigNumber(-0.0001)
+ * int.toPrecision(6) // BigNumber(-1000000)
+ */
+export declare class Int extends BigNumber {
+    constructor(number: BigNumber | number | string);
+    fromPow(precision: number, roundingMode?: BigNumber.RoundingMode): BigNumber;
+    toPow(precision: number, roundingMode?: BigNumber.RoundingMode): BigNumber;
+}
 export declare enum CallMode {
     returnParams = 0,
     returnOperation = 1,
@@ -72,18 +101,42 @@ export declare namespace fa12Types {
     };
 }
 export declare namespace quipuswapV3Types {
-    type x80n = {
-        x80: Nat;
+    type Fa2Token = {
+        fa2: {
+            token_id: BigNumber;
+            token_address: Address;
+        };
     };
-    type x128 = {
-        x128: Int;
+    type Fa12Token = {
+        fa12: Address;
     };
-    type x128n = {
-        x128: Nat;
-    };
-    type TickIndex = {
-        i: Int;
-    };
+    type TokenType = Fa2Token | Fa12Token;
+    /**
+     * Keeps a positive value with -2^80 precision.
+     */
+    class x80n extends Nat {
+        constructor(number: BigNumber | number | string);
+        static init(number: BigNumber | number | string): x80n;
+        toNormal(): BigNumber;
+    }
+    /**
+     *  Keeps a value with -2^128 precision.
+     *
+     */
+    class x128 extends Int {
+        constructor(number: BigNumber | number | string);
+        static init(number: BigNumber | number | string): x128;
+        toNormal(): BigNumber;
+    }
+    /**
+     * Keeps a positive value with -2^128 precision.
+     */
+    class x128n extends Nat {
+        constructor(number: BigNumber | number | string);
+        static init(number: BigNumber | number | string): x128n;
+        toNormal(): BigNumber;
+    }
+    type TickIndex = Int;
     type BalanceNat = {
         x: Nat;
         y: Nat;
@@ -99,20 +152,20 @@ export declare namespace quipuswapV3Types {
     type TickState = {
         prev: TickIndex;
         next: TickIndex;
-        liquidity_net: Int;
-        n_positions: Nat;
-        seconds_outside: Nat;
-        tick_cumulative_outside: Int;
-        fee_growth_outside: BalanceNatX128;
-        seconds_per_liquidity_outside: x128n;
-        sqrt_price: x80n;
+        liquidityNet: Int;
+        nPositions: Nat;
+        secondsOutside: Nat;
+        tickCumulativeOutside: Int;
+        feeGrowthOutside: BalanceNatX128;
+        secondsPerLiquidityOutside: x128n;
+        sqrtPrice: x80n;
     };
     type PositionState = {
-        lower_tick_index: TickIndex;
-        upper_tick_index: TickIndex;
+        lowerTickIndex: TickIndex;
+        upperTickIndex: TickIndex;
         owner: Address;
         liquidity: Nat;
-        fee_growth_inside_last: BalanceIntX128;
+        feeGrowthInsideLast: BalanceIntX128;
     };
     type TickCumulative = {
         sum: Int;
@@ -131,16 +184,13 @@ export declare namespace quipuswapV3Types {
         map: MichelsonMap<MichelsonMapKey, unknown>;
         first: Nat;
         last: Nat;
-        reserved_length: Nat;
+        reservedLength: Nat;
     };
     type Constants = {
-        fee_bps: Nat;
-        ctez_burn_fee_bps: Nat;
-        x_token_id: Nat;
-        y_token_id: Nat;
-        x_token_address: Address;
-        y_token_address: Address;
-        tick_spacing: Nat;
+        feeBps: Nat;
+        tokenX: TokenType;
+        tokenY: TokenType;
+        tickSpacing: Nat;
     };
     type Fixed_point = {
         v: Nat;
@@ -160,6 +210,42 @@ export declare namespace quipuswapV3Types {
         deadline: Timestamp;
         maximumTokensContributed: BalanceNat;
     };
+    class TickMap {
+        map: MichelsonMap<MichelsonMapKey, unknown>;
+        constructor(map: MichelsonMap<MichelsonMapKey, unknown>);
+        get(key: TickIndex): Promise<TickState>;
+    }
+    class PositionMap {
+        map: MichelsonMap<MichelsonMapKey, unknown>;
+        constructor(map: MichelsonMap<MichelsonMapKey, unknown>);
+        get(key: Nat): Promise<PositionState>;
+    }
+    class LadderMap {
+        map: MichelsonMap<MichelsonMapKey, unknown>;
+        constructor(map: MichelsonMap<MichelsonMapKey, unknown>);
+        get(key: Ladder_key): Promise<Fixed_point>;
+    }
+    type Storage = {
+        liquidity: Nat;
+        sqrtPrice: x80n;
+        curTickIndex: TickIndex;
+        curTickWitness: TickIndex;
+        feeGrowth: BalanceNatX128;
+        ticks: TickMap;
+        positions: PositionMap;
+        cumulativesBuffer: TimedCumulativesBuffer;
+        metadata: MichelsonMap<MichelsonMapKey, unknown>;
+        newPositionId: BigNumber;
+        operators: MichelsonMap<MichelsonMapKey, unknown>;
+        constants: Constants;
+        ladder: LadderMap;
+    };
+    type CumulativesValue = {
+        tick_cumulative: Int;
+        seconds_per_liquidity_cumulative: x128n;
+    };
+}
+export declare namespace quipuswapV3CallTypes {
     type UpdatePosition = {
         /**
          * positionId - position id
@@ -181,25 +267,6 @@ export declare namespace quipuswapV3Types {
         /** The maximum number of tokens to contribute.
             If a higher amount is required, the entrypoint fails.
         */
-        maximumTokensContributed: BalanceNat;
-    };
-    type Storage = {
-        liquidity: Nat;
-        sqrt_price: x80n;
-        cur_tick_index: TickIndex;
-        cur_tick_witness: TickIndex;
-        fee_growth: BalanceNatX128;
-        ticks: MichelsonMap<MichelsonMapKey, unknown>;
-        positions: MichelsonMap<MichelsonMapKey, unknown>;
-        cumulatives_buffer: TimedCumulativesBuffer;
-        metadata: MichelsonMap<MichelsonMapKey, unknown>;
-        new_position_id: BigNumber;
-        operators: MichelsonMap<MichelsonMapKey, unknown>;
-        constants: Constants;
-        ladder: Ladder;
-    };
-    type CumulativesValue = {
-        tick_cumulative: Int;
-        seconds_per_liquidity_cumulative: x128n;
+        maximumTokensContributed: quipuswapV3Types.BalanceNat;
     };
 }

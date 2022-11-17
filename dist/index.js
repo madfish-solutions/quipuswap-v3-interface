@@ -16,6 +16,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QuipuswapV3 = exports.QuipuswapV3Storage = exports.QuipuswapV3Methods = void 0;
+const types_1 = require("./types");
 const utils_1 = require("./utils");
 const defaults_1 = require("./helpers/defaults");
 const decorators_1 = require("./helpers/decorators");
@@ -116,7 +117,40 @@ class QuipuswapV3Storage {
      */
     static getStorage(contract) {
         return __awaiter(this, void 0, void 0, function* () {
-            return contract.storage();
+            const origStorage = (yield contract.storage());
+            return {
+                liquidity: new types_1.Nat(origStorage.liquidity),
+                sqrtPrice: new types_1.quipuswapV3Types.x80n(origStorage.sqrt_price),
+                curTickIndex: new types_1.Int(origStorage.cur_tick_index),
+                curTickWitness: new types_1.Int(origStorage.cur_tick_witness),
+                feeGrowth: {
+                    x: new types_1.quipuswapV3Types.x80n(origStorage.fee_growth.x),
+                    y: new types_1.quipuswapV3Types.x80n(origStorage.fee_growth.y),
+                },
+                ticks: new types_1.quipuswapV3Types.TickMap(origStorage.ticks),
+                positions: new types_1.quipuswapV3Types.PositionMap(origStorage.positions),
+                cumulativesBuffer: {
+                    map: origStorage.cumulatives_buffer,
+                    first: new types_1.Nat(origStorage.cumulatives_buffer.first),
+                    last: new types_1.Nat(origStorage.cumulatives_buffer.last),
+                    reservedLength: new types_1.Nat(origStorage.cumulatives_buffer.reserved_length),
+                },
+                metadata: origStorage.metadata,
+                newPositionId: new types_1.Nat(origStorage.new_position_id),
+                operators: origStorage.operators,
+                constants: {
+                    feeBps: new types_1.Nat(origStorage.constants.fee_bps),
+                    tokenX: origStorage.constants.token_x,
+                    tokenY: origStorage.constants.token_y,
+                    tickSpacing: new types_1.Nat(origStorage.constants.tick_spacing),
+                },
+                ladder: new types_1.quipuswapV3Types.LadderMap(origStorage.ladder),
+            };
+        });
+    }
+    static getRawStorage(contract) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield contract.storage();
         });
     }
 }
@@ -139,6 +173,11 @@ class QuipuswapV3 {
             return QuipuswapV3Storage.getStorage(this.contract);
         });
     }
+    getRawStorage() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return QuipuswapV3Storage.getRawStorage(this.contract);
+        });
+    }
     /**
      * Swap X tokens for Y tokens
      * @param amount Amount of tokens to swap
@@ -150,9 +189,9 @@ class QuipuswapV3 {
     swapXY(amount, deadline, minExpectedReceive, recipient) {
         return __awaiter(this, void 0, void 0, function* () {
             const transferParams = [
-                new utils_1.Nat(amount),
+                new types_1.Nat(amount),
                 new utils_1.Timestamp(deadline),
-                new utils_1.Nat(minExpectedReceive),
+                new types_1.Nat(minExpectedReceive),
                 new utils_1.Address(recipient),
             ];
             return {
@@ -172,9 +211,9 @@ class QuipuswapV3 {
     swapYX(amount, deadline, minExpectedReceive, recipient) {
         return __awaiter(this, void 0, void 0, function* () {
             const params = [
-                new utils_1.Nat(amount),
+                new types_1.Nat(amount),
                 new utils_1.Timestamp(deadline),
-                new utils_1.Nat(minExpectedReceive),
+                new types_1.Nat(minExpectedReceive),
                 new utils_1.Address(recipient),
             ];
             return {
@@ -198,14 +237,14 @@ class QuipuswapV3 {
     setPosition(lowerTickIndex, upperTickIndex, lowerTickWitness, upperTickWitness, liquidity, deadline, maximumTokensContributedX, maximumTokensContributedY) {
         return __awaiter(this, void 0, void 0, function* () {
             const params = [
-                new utils_1.Int(lowerTickIndex),
-                new utils_1.Int(upperTickIndex),
-                new utils_1.Int(lowerTickWitness),
-                new utils_1.Int(upperTickWitness),
-                new utils_1.Nat(liquidity),
+                new types_1.Int(lowerTickIndex),
+                new types_1.Int(upperTickIndex),
+                new types_1.Int(lowerTickWitness),
+                new types_1.Int(upperTickWitness),
+                new types_1.Nat(liquidity),
                 new utils_1.Timestamp(deadline),
-                new utils_1.Nat(maximumTokensContributedX),
-                new utils_1.Nat(maximumTokensContributedY),
+                new types_1.Nat(maximumTokensContributedX),
+                new types_1.Nat(maximumTokensContributedY),
             ];
             return {
                 callParams: params,
@@ -228,13 +267,13 @@ class QuipuswapV3 {
     updatePosition(positionId, liquidityDelta, toX, toY, deadline, maximumTokensContributedX, maximumTokensContributedY) {
         return __awaiter(this, void 0, void 0, function* () {
             const params = [
-                new utils_1.Nat(positionId),
-                new utils_1.Int(liquidityDelta),
+                new types_1.Nat(positionId),
+                new types_1.Int(liquidityDelta),
                 new utils_1.Address(toX),
                 new utils_1.Address(toY),
                 new utils_1.Timestamp(deadline),
-                new utils_1.Nat(maximumTokensContributedX),
-                new utils_1.Nat(maximumTokensContributedY),
+                new types_1.Nat(maximumTokensContributedX),
+                new types_1.Nat(maximumTokensContributedY),
             ];
             return {
                 callParams: params,
@@ -260,8 +299,8 @@ class QuipuswapV3 {
                     txs: param.txs.map(tx => {
                         return {
                             to_: new utils_1.Address(tx.to_),
-                            token_id: new utils_1.Nat(tx.token_id),
-                            amount: new utils_1.Nat(tx.amount.toFixed()),
+                            token_id: new types_1.Nat(tx.token_id),
+                            amount: new types_1.Nat(tx.amount.toFixed()),
                         };
                     }),
                 };
@@ -288,7 +327,7 @@ class QuipuswapV3 {
                         add_operator: {
                             owner: new utils_1.Address(param.add_operator.owner),
                             operator: new utils_1.Address(param.add_operator.operator),
-                            token_id: new utils_1.Nat(param.add_operator.token_id),
+                            token_id: new types_1.Nat(param.add_operator.token_id),
                         },
                     };
                 }
@@ -297,7 +336,7 @@ class QuipuswapV3 {
                         remove_operator: {
                             owner: new utils_1.Address(param.remove_operator.owner),
                             operator: new utils_1.Address(param.remove_operator.operator),
-                            token_id: new utils_1.Nat(param.remove_operator.token_id),
+                            token_id: new types_1.Nat(param.remove_operator.token_id),
                         },
                     };
                 }
