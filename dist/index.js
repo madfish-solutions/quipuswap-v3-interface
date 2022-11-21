@@ -115,7 +115,7 @@ class QuipuswapV3Storage {
      * @param contract
      * @returns
      */
-    static getStorage(contract) {
+    static getStorage(contract, positionIds, tickIndices, bufferMapIndices) {
         return __awaiter(this, void 0, void 0, function* () {
             const origStorage = (yield contract.storage());
             return {
@@ -127,10 +127,10 @@ class QuipuswapV3Storage {
                     x: new types_1.quipuswapV3Types.x80n(origStorage.fee_growth.x),
                     y: new types_1.quipuswapV3Types.x80n(origStorage.fee_growth.y),
                 },
-                ticks: new types_1.quipuswapV3Types.TickMap(origStorage.ticks),
-                positions: new types_1.quipuswapV3Types.PositionMap(origStorage.positions),
+                ticks: yield types_1.quipuswapV3Types.TickMap.init(origStorage.ticks, tickIndices),
+                positions: yield types_1.quipuswapV3Types.PositionMap.init(origStorage.positions, positionIds),
                 cumulativesBuffer: {
-                    map: origStorage.cumulatives_buffer,
+                    map: yield types_1.quipuswapV3Types.CumulativeBufferMap.init(origStorage.cumulatives_buffer.map, bufferMapIndices),
                     first: new types_1.Nat(origStorage.cumulatives_buffer.first),
                     last: new types_1.Nat(origStorage.cumulatives_buffer.last),
                     reservedLength: new types_1.Nat(origStorage.cumulatives_buffer.reserved_length),
@@ -146,6 +146,33 @@ class QuipuswapV3Storage {
                 },
                 ladder: new types_1.quipuswapV3Types.LadderMap(origStorage.ladder),
             };
+        });
+    }
+    static updateStorage(storage, contract, positionIds = [], tickIndices = [], bufferMapIndices = []) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const origStorage = (yield contract.storage());
+            storage.liquidity = new types_1.Nat(origStorage.liquidity);
+            storage.sqrtPrice = new types_1.quipuswapV3Types.x80n(origStorage.sqrt_price);
+            storage.curTickIndex = new types_1.Int(origStorage.cur_tick_index);
+            storage.curTickWitness = new types_1.Int(origStorage.cur_tick_witness);
+            storage.feeGrowth = {
+                x: new types_1.quipuswapV3Types.x80n(origStorage.fee_growth.x),
+                y: new types_1.quipuswapV3Types.x80n(origStorage.fee_growth.y),
+            };
+            yield storage.ticks.updateMap(tickIndices);
+            yield storage.positions.updateMap(positionIds);
+            yield storage.cumulativesBuffer.map.updateMap(bufferMapIndices);
+            storage.metadata = origStorage.metadata;
+            storage.newPositionId = new types_1.Nat(origStorage.new_position_id);
+            storage.operators = origStorage.operators;
+            storage.constants = {
+                feeBps: new types_1.Nat(origStorage.constants.fee_bps),
+                tokenX: origStorage.constants.token_x,
+                tokenY: origStorage.constants.token_y,
+                tickSpacing: new types_1.Nat(origStorage.constants.tick_spacing),
+            };
+            storage.ladder = new types_1.quipuswapV3Types.LadderMap(origStorage.ladder);
+            return storage;
         });
     }
     static getRawStorage(contract) {
@@ -165,12 +192,19 @@ class QuipuswapV3 {
         return __awaiter(this, void 0, void 0, function* () {
             this.tezos = tezos;
             this.contract = yield tezos.contract.at(contractAddress);
+            this.storage = yield QuipuswapV3Storage.getStorage(this.contract, [], [], []);
             return this;
         });
     }
-    getStorage() {
+    getStorage(positionIds = [], tickIndices = [], bufferMapIndices = []) {
         return __awaiter(this, void 0, void 0, function* () {
-            return QuipuswapV3Storage.getStorage(this.contract);
+            return QuipuswapV3Storage.getStorage(this.contract, positionIds, tickIndices, bufferMapIndices);
+        });
+    }
+    updateStorage(positionIds = [], tickIndices = [], bufferMapIndices = []) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield QuipuswapV3Storage.updateStorage(this.storage, this.contract, positionIds, tickIndices, bufferMapIndices);
+            return this.storage;
         });
     }
     getRawStorage() {

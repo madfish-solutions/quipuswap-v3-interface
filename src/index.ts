@@ -176,8 +176,12 @@ export class QuipuswapV3Storage {
    */
   static async getStorage(
     contract: Contract,
+    positionIds: Nat[],
+    tickIndices: Int[],
+    bufferMapIndices: Nat[],
   ): Promise<quipuswapV3Types.Storage> {
     const origStorage = (await contract.storage()) as any;
+
     return {
       liquidity: new Nat(origStorage.liquidity),
       sqrtPrice: new quipuswapV3Types.x80n(origStorage.sqrt_price),
@@ -187,11 +191,20 @@ export class QuipuswapV3Storage {
         x: new quipuswapV3Types.x80n(origStorage.fee_growth.x),
         y: new quipuswapV3Types.x80n(origStorage.fee_growth.y),
       },
-      ticks: new quipuswapV3Types.TickMap(origStorage.ticks),
-      positions: new quipuswapV3Types.PositionMap(origStorage.positions),
+      ticks: await quipuswapV3Types.TickMap.init(
+        origStorage.ticks,
+        tickIndices,
+      ),
+      positions: await quipuswapV3Types.PositionMap.init(
+        origStorage.positions,
+        positionIds,
+      ),
 
       cumulativesBuffer: {
-        map: origStorage.cumulatives_buffer,
+        map: await quipuswapV3Types.CumulativeBufferMap.init(
+          origStorage.cumulatives_buffer.map,
+          bufferMapIndices,
+        ),
         first: new Nat(origStorage.cumulatives_buffer.first),
         last: new Nat(origStorage.cumulatives_buffer.last),
         reservedLength: new Nat(origStorage.cumulatives_buffer.reserved_length),
@@ -208,6 +221,37 @@ export class QuipuswapV3Storage {
       ladder: new quipuswapV3Types.LadderMap(origStorage.ladder),
     };
   }
+  static async updateStorage(
+    storage: quipuswapV3Types.Storage,
+    contract: Contract,
+    positionIds: Nat[] = [],
+    tickIndices: Int[] = [],
+    bufferMapIndices: Nat[] = [],
+  ) {
+    const origStorage = (await contract.storage()) as any;
+    storage.liquidity = new Nat(origStorage.liquidity);
+    storage.sqrtPrice = new quipuswapV3Types.x80n(origStorage.sqrt_price);
+    storage.curTickIndex = new Int(origStorage.cur_tick_index);
+    storage.curTickWitness = new Int(origStorage.cur_tick_witness);
+    storage.feeGrowth = {
+      x: new quipuswapV3Types.x80n(origStorage.fee_growth.x),
+      y: new quipuswapV3Types.x80n(origStorage.fee_growth.y),
+    };
+    await storage.ticks.updateMap(tickIndices);
+    await storage.positions.updateMap(positionIds);
+    await storage.cumulativesBuffer.map.updateMap(bufferMapIndices);
+    storage.metadata = origStorage.metadata;
+    storage.newPositionId = new Nat(origStorage.new_position_id);
+    storage.operators = origStorage.operators;
+    storage.constants = {
+      feeBps: new Nat(origStorage.constants.fee_bps),
+      tokenX: origStorage.constants.token_x,
+      tokenY: origStorage.constants.token_y,
+      tickSpacing: new Nat(origStorage.constants.tick_spacing),
+    };
+    storage.ladder = new quipuswapV3Types.LadderMap(origStorage.ladder);
+    return storage;
+  }
   static async getRawStorage(contract: Contract): Promise<any> {
     return await contract.storage();
   }
@@ -216,6 +260,7 @@ export class QuipuswapV3Storage {
 export class QuipuswapV3 {
   tezos: TezosToolkit;
   contract: Contract;
+  storage: quipuswapV3Types.Storage;
   constructor(
     private callSettings: CallSettings = defaultCallSettings,
     public syncInterval: number = 0,
@@ -225,13 +270,43 @@ export class QuipuswapV3 {
   async init(tezos: TezosToolkit, contractAddress: string) {
     this.tezos = tezos;
     this.contract = await tezos.contract.at(contractAddress);
+    this.storage = await QuipuswapV3Storage.getStorage(
+      this.contract,
+      [],
+      [],
+      [],
+    );
     return this;
   }
 
-  async getStorage(): Promise<quipuswapV3Types.Storage> {
-    return QuipuswapV3Storage.getStorage(this.contract);
+  async getStorage(
+    positionIds: Nat[] = [],
+    tickIndices: Int[] = [],
+    bufferMapIndices: Nat[] = [],
+  ): Promise<quipuswapV3Types.Storage> {
+    return QuipuswapV3Storage.getStorage(
+      this.contract,
+      positionIds,
+      tickIndices,
+      bufferMapIndices,
+    );
   }
 
+  async updateStorage(
+    positionIds: Nat[] = [],
+    tickIndices: Int[] = [],
+
+    bufferMapIndices: Nat[] = [],
+  ) {
+    await QuipuswapV3Storage.updateStorage(
+      this.storage,
+      this.contract,
+      positionIds,
+      tickIndices,
+      bufferMapIndices,
+    );
+    return this.storage;
+  }
   async getRawStorage(): Promise<any> {
     return QuipuswapV3Storage.getRawStorage(this.contract);
   }

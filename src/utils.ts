@@ -1,5 +1,11 @@
 import BigNumber from "bignumber.js";
-import { tezosTypes } from "./types";
+import {
+  Int,
+  Nat,
+  quipuswapV3CallTypes,
+  quipuswapV3Types,
+  tezosTypes,
+} from "./types";
 import { TezosToolkit, TransferParams } from "@taquito/taquito";
 const { validateAddress } = require("@taquito/utils");
 
@@ -70,3 +76,32 @@ export const sendBatch = async (
   tezos: TezosToolkit,
   operationParams: TransferParams[],
 ) => batchify(tezos.wallet.batch([]), operationParams).send();
+
+export const initTimedCumulatives = (
+  time,
+): quipuswapV3Types.TimedCumulative => {
+  return {
+    time: time,
+    tick: {
+      sum: new quipuswapV3Types.x128(0),
+      blockStartValue: new Int(0),
+    },
+    spl: {
+      sum: new quipuswapV3Types.x128(0),
+      blockStartLiquidityValue: new Int(0),
+    },
+  };
+};
+
+export const initTimedCumulativesBuffer = async (
+  extraReservedSlots: Nat,
+): Promise<quipuswapV3Types.TimedCumulativesBuffer> => {
+  return {
+    map: await quipuswapV3Types.CumulativeBufferMap.initCustom(
+      extraReservedSlots.toNumber(),
+    ),
+    first: new Int(0),
+    last: new Int(0),
+    reservedLength: new Nat(extraReservedSlots.toNumber() + 1),
+  };
+};

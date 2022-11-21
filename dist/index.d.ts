@@ -17,7 +17,8 @@ export declare class QuipuswapV3Storage {
      * @param contract
      * @returns
      */
-    static getStorage(contract: Contract): Promise<quipuswapV3Types.Storage>;
+    static getStorage(contract: Contract, positionIds: Nat[], tickIndices: Int[], bufferMapIndices: Nat[]): Promise<quipuswapV3Types.Storage>;
+    static updateStorage(storage: quipuswapV3Types.Storage, contract: Contract, positionIds?: Nat[], tickIndices?: Int[], bufferMapIndices?: Nat[]): Promise<quipuswapV3Types.Storage>;
     static getRawStorage(contract: Contract): Promise<any>;
 }
 export declare class QuipuswapV3 {
@@ -26,9 +27,11 @@ export declare class QuipuswapV3 {
     confirmtaionTimeout: number;
     tezos: TezosToolkit;
     contract: Contract;
+    storage: quipuswapV3Types.Storage;
     constructor(callSettings?: CallSettings, syncInterval?: number, confirmtaionTimeout?: number);
     init(tezos: TezosToolkit, contractAddress: string): Promise<this>;
-    getStorage(): Promise<quipuswapV3Types.Storage>;
+    getStorage(positionIds?: Nat[], tickIndices?: Int[], bufferMapIndices?: Nat[]): Promise<quipuswapV3Types.Storage>;
+    updateStorage(positionIds?: Nat[], tickIndices?: Int[], bufferMapIndices?: Nat[]): Promise<quipuswapV3Types.Storage>;
     getRawStorage(): Promise<any>;
     /**
      * Swap X tokens for Y tokens

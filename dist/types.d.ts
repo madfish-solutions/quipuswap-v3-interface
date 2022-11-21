@@ -168,20 +168,39 @@ export declare namespace quipuswapV3Types {
         feeGrowthInsideLast: BalanceIntX128;
     };
     type TickCumulative = {
+        /** The time-weighted cumulative value. */
         sum: Int;
-        block_start_value: TickIndex;
+        /** Tick index value at the beginning of the block. */
+        blockStartValue: TickIndex;
     };
     type SplCumulative = {
+        /** The time-weighted cumulative value */
         sum: x128n;
-        block_start_liquidity_value: Nat;
+        /** Liquidity value at the beginning of the block */
+        blockStartLiquidityValue: Nat;
     };
-    type TimedCumulatives = {
+    type TimedCumulative = {
         time: string;
         tick: TickCumulative;
         spl: SplCumulative;
     };
     type TimedCumulativesBuffer = {
-        map: MichelsonMap<MichelsonMapKey, unknown>;
+        /**
+         *  For each index this stores:
+            1. Cumulative values for every second in the history of the contract
+              till specific moment of time, as well as last known value for
+              the sake of future linear extrapolation.
+            2. Timestamp when this sum was registered.
+              This allows for bin search by timestamp.
+    
+            Indices in the map are assigned to values sequentially starting from 0.
+    
+            Invariants:
+            a. The set of indices that have an associated element with them is continuous;
+            b. Timestamps in values grow strictly monotonically
+              (as well as accumulators ofc);
+         */
+        map: CumulativeBufferMap;
         first: Nat;
         last: Nat;
         reservedLength: Nat;
@@ -210,15 +229,43 @@ export declare namespace quipuswapV3Types {
         deadline: Timestamp;
         maximumTokensContributed: BalanceNat;
     };
-    class TickMap {
-        map: MichelsonMap<MichelsonMapKey, unknown>;
-        constructor(map: MichelsonMap<MichelsonMapKey, unknown>);
-        get(key: TickIndex): Promise<TickState>;
+    class CumulativeBufferMap {
+        michelsonMap: MichelsonMap<MichelsonMapKey, unknown>;
+        map: {
+            [key: number]: TimedCumulative;
+        };
+        constructor(michelsonMap: MichelsonMap<MichelsonMapKey, unknown>, map: CumulativeBufferMap["map"]);
+        static init(michelsonMap: any, indices?: Nat[]): Promise<CumulativeBufferMap>;
+        static initCustom(extraReservedSlots: number): CumulativeBufferMap;
+        get(key: Nat): TimedCumulative;
+        getActual(key: Nat): Promise<TimedCumulative>;
+        updateMap(mapIndices?: Nat[]): Promise<void>;
     }
+    class TickMap {
+        michelsonMap: MichelsonMap<MichelsonMapKey, unknown>;
+        map: {
+            [key: number]: TickState;
+        };
+        constructor(michelsonMap: MichelsonMap<MichelsonMapKey, unknown>, map: TickMap["map"]);
+        static init(michelsonMap: any, tickIndices?: Int[]): Promise<TickMap>;
+        get(key: Int): TickState;
+        getActual(key: TickIndex): Promise<TickState>;
+        updateMap(tickIndices?: Int[]): Promise<void>;
+    }
+    /**
+     * @description QuipuswapV3 PositionMap
+     * @field map [key: number]: PositionState
+     * @field michelsonMap MichelsonMap
+     */
     class PositionMap {
-        map: MichelsonMap<MichelsonMapKey, unknown>;
-        constructor(map: MichelsonMap<MichelsonMapKey, unknown>);
-        get(key: Nat): Promise<PositionState>;
+        michelsonMap: MichelsonMap<MichelsonMapKey, unknown>;
+        map: {
+            [key: number]: PositionState;
+        };
+        constructor(michelsonMap: MichelsonMap<MichelsonMapKey, unknown>, map: PositionMap["map"]);
+        static init(michelsonMap: any, positionIds: Nat[]): Promise<PositionMap>;
+        get(key: Nat): PositionState;
+        updateMap(positionIds?: Nat[]): Promise<void>;
     }
     class LadderMap {
         map: MichelsonMap<MichelsonMapKey, unknown>;

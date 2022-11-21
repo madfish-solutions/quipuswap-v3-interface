@@ -9,7 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendBatch = exports.batchify = exports.Timestamp = exports.Address = void 0;
+exports.initTimedCumulativesBuffer = exports.initTimedCumulatives = exports.sendBatch = exports.batchify = exports.Timestamp = exports.Address = void 0;
+const types_1 = require("./types");
 const { validateAddress } = require("@taquito/utils");
 /**
  * @category Utils
@@ -70,3 +71,26 @@ exports.batchify = batchify;
  */
 const sendBatch = (tezos, operationParams) => __awaiter(void 0, void 0, void 0, function* () { return batchify(tezos.wallet.batch([]), operationParams).send(); });
 exports.sendBatch = sendBatch;
+const initTimedCumulatives = (time) => {
+    return {
+        time: time,
+        tick: {
+            sum: new types_1.quipuswapV3Types.x128(0),
+            blockStartValue: new types_1.Int(0),
+        },
+        spl: {
+            sum: new types_1.quipuswapV3Types.x128(0),
+            blockStartLiquidityValue: new types_1.Int(0),
+        },
+    };
+};
+exports.initTimedCumulatives = initTimedCumulatives;
+const initTimedCumulativesBuffer = (extraReservedSlots) => __awaiter(void 0, void 0, void 0, function* () {
+    return {
+        map: yield types_1.quipuswapV3Types.CumulativeBufferMap.initCustom(extraReservedSlots.toNumber()),
+        first: new types_1.Int(0),
+        last: new types_1.Int(0),
+        reservedLength: new types_1.Nat(extraReservedSlots.toNumber() + 1),
+    };
+});
+exports.initTimedCumulativesBuffer = initTimedCumulativesBuffer;

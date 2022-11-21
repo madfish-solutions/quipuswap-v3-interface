@@ -1,4 +1,4 @@
-import { tezosTypes } from "./types";
+import { Nat, quipuswapV3Types, tezosTypes } from "./types";
 import { TezosToolkit, TransferParams } from "@taquito/taquito";
 /**
  * @category Utils
@@ -29,4 +29,6 @@ export declare function batchify<B extends tezosTypes.Batch>(batch: B, transfers
  * const batch = await sendBatch(tezos, [transferParams])
  */
 export declare const sendBatch: (tezos: TezosToolkit, operationParams: TransferParams[]) => Promise<import("@taquito/taquito/dist/types/wallet/batch-operation").BatchWalletOperation>;
+export declare const initTimedCumulatives: (time: any) => quipuswapV3Types.TimedCumulative;
+export declare const initTimedCumulativesBuffer: (extraReservedSlots: Nat) => Promise<quipuswapV3Types.TimedCumulativesBuffer>;
 export {};

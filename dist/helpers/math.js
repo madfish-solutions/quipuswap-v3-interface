@@ -23,8 +23,8 @@ const bignumber_js_1 = require("bignumber.js");
  */
 function tickAccumulatorsInside(cfmm, st, lowerTi, upperTi) {
     return __awaiter(this, void 0, void 0, function* () {
-        const lowerTs = yield st.ticks.get(lowerTi);
-        const upperTs = yield st.ticks.get(upperTi);
+        const lowerTs = st.ticks.get(lowerTi);
+        const upperTs = st.ticks.get(upperTi);
         const currentTime = new bignumber_js_1.BigNumber(Math.floor(Date.now() / 1000)).plus(1);
         const { tick_cumulative: cvTickCumulative, seconds_per_liquidity_cumulative: cvSecondsPerLiquidityCumulative, } = (yield cfmm.observe([currentTime.toString()]))[0];
         const tickAccumulatorAbove = (tickIndex, globalAcc, tickAccOutside) => {

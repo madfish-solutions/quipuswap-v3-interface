@@ -320,38 +320,40 @@ export namespace quipuswapV3Types {
   };
 
   export type TickCumulative = {
-    // The time-weighted cumulative value.
+    /** The time-weighted cumulative value. */
     sum: Int;
-    // Tick index value at the beginning of the block.
-    block_start_value: TickIndex;
+    /** Tick index value at the beginning of the block. */
+    blockStartValue: TickIndex;
   };
   export type SplCumulative = {
-    // The time-weighted cumulative value.
+    /** The time-weighted cumulative value */
     sum: x128n;
-    // Liquidity value at the beginning of the block.
-    block_start_liquidity_value: Nat;
+    /** Liquidity value at the beginning of the block */
+    blockStartLiquidityValue: Nat;
   };
-  export type TimedCumulatives = {
+  export type TimedCumulative = {
     time: string;
     tick: TickCumulative;
     spl: SplCumulative;
   };
 
   export type TimedCumulativesBuffer = {
-    // For each index this stores:
-    // 1. Cumulative values for every second in the history of the contract
-    //    till specific moment of time, as well as last known value for
-    //    the sake of future linear extrapolation.
-    // 2. Timestamp when this sum was registered.
-    //    This allows for bin search by timestamp.
-    //
-    // Indices in the map are assigned to values sequentially starting from 0.
-    //
-    // Invariants:
-    // a. The set of indices that have an associated element with them is continuous;
-    // b. Timestamps in values grow strictly monotonically
-    //    (as well as accumulators ofc);
-    map: MichelsonMap<MichelsonMapKey, unknown>;
+    /**
+     *  For each index this stores:
+        1. Cumulative values for every second in the history of the contract
+          till specific moment of time, as well as last known value for
+          the sake of future linear extrapolation.
+        2. Timestamp when this sum was registered.
+          This allows for bin search by timestamp.
+
+        Indices in the map are assigned to values sequentially starting from 0.
+
+        Invariants:
+        a. The set of indices that have an associated element with them is continuous;
+        b. Timestamps in values grow strictly monotonically
+          (as well as accumulators ofc);
+     */
+    map: CumulativeBufferMap;
 
     // Index of the oldest stored value.
     first: Nat;
@@ -394,10 +396,150 @@ export namespace quipuswapV3Types {
     maximumTokensContributed: BalanceNat;
   };
 
+  export class CumulativeBufferMap {
+    map: { [key: number]: TimedCumulative };
+    constructor(
+      public michelsonMap: MichelsonMap<MichelsonMapKey, unknown>,
+      map: CumulativeBufferMap["map"],
+    ) {
+      this.map = map;
+    }
+    static async init(michelsonMap, indices: Nat[] = []) {
+      const timedCumulatives = await michelsonMap.getMultipleValues(indices);
+      const newCumulativesMap = {};
+      timedCumulatives.forEach((value, key) => {
+        if (value !== undefined) {
+          newCumulativesMap[key] = {
+            time: value.time,
+            tick: {
+              sum: new x128n(value.tick.sum),
+              blockStartValue: value.tick.block_start_value,
+            },
+            spl: {
+              sum: new x128n(value.spl.sum),
+              blockStartLiquidityValue: value.spl.block_start_liquidity_value,
+            },
+          };
+        }
+      });
+      return new CumulativeBufferMap(michelsonMap, newCumulativesMap);
+    }
+    static initCustom(extraReservedSlots: number) {
+      const newCumulativesMichelsonMap = new MichelsonMap();
+      const newCumulativesMap = {};
+      let reservedSlotsList: Nat[] = [];
+      for (let i = 0; i < extraReservedSlots; i++) {
+        reservedSlotsList.push(new Nat(1));
+        newCumulativesMichelsonMap.set(i, {
+          time: "0",
+          tick: {
+            sum: "0",
+            block_start_value: "0",
+          },
+          spl: {
+            sum: "0",
+            block_start_liquidity_value: "0",
+          },
+        });
+
+        newCumulativesMap[i] = {
+          time: "0",
+          tick: {
+            sum: new x128n("0"),
+            blockStartValue: new Int("0"),
+          },
+          spl: {
+            sum: new x128n("0"),
+            blockStartLiquidityValue: new Nat("0"),
+          },
+        };
+      }
+
+      return new CumulativeBufferMap(
+        newCumulativesMichelsonMap,
+        newCumulativesMap,
+      );
+    }
+
+    get(key: Nat): TimedCumulative {
+      return this.map[key.toString()];
+    }
+    async getActual(key: Nat): Promise<TimedCumulative> {
+      const ts: any = await this.michelsonMap.get(key.toString());
+      return {
+        time: ts.time,
+        tick: {
+          sum: new x128n(ts.tick.sum),
+          blockStartValue: ts.tick.block_start_value,
+        },
+        spl: {
+          sum: new x128n(ts.spl.sum),
+          blockStartLiquidityValue: ts.spl.block_start_liquidity_value,
+        },
+      };
+    }
+    async updateMap(mapIndices: Nat[] = []) {
+      let knownIndices = Object.keys(this.map);
+      knownIndices = knownIndices.concat(mapIndices.map(id => id.toString()));
+      const timedCumulative = await (
+        this.michelsonMap as unknown as any
+      ).getMultipleValues(knownIndices);
+
+      timedCumulative.forEach((value, key) => {
+        if (value !== undefined) {
+          this.map[key] = {
+            time: value.time,
+            tick: {
+              sum: new x128n(value.tick.sum),
+              blockStartValue: value.tick.block_start_value,
+            },
+            spl: {
+              sum: new x128n(value.spl.sum),
+              blockStartLiquidityValue: value.spl.block_start_liquidity_value,
+            },
+          };
+        }
+      });
+    }
+  }
   export class TickMap {
-    constructor(public map: MichelsonMap<MichelsonMapKey, unknown>) {}
-    async get(key: TickIndex): Promise<TickState> {
-      const st: any = await this.map.get(key.toString());
+    map: { [key: number]: TickState };
+    constructor(
+      public michelsonMap: MichelsonMap<MichelsonMapKey, unknown>,
+      map: TickMap["map"],
+    ) {
+      this.map = map;
+    }
+    static async init(michelsonMap, tickIndices: Int[] = []) {
+      const tickStates = await michelsonMap.getMultipleValues(tickIndices);
+      const newTicksMap = {};
+      tickStates.forEach((value, key) => {
+        if (value !== undefined) {
+          newTicksMap[key] = {
+            prev: new Int(value.prev),
+            next: new Int(value.next),
+            liquidityNet: new Int(value.liquidity_net),
+            secondsOutside: new Nat(value.seconds_outside),
+            tickCumulativeOutside: new Int(value.tick_cumulative_outside),
+            feeGrowthOutside: {
+              x: new x128n(value.fee_growth_outside.x),
+              y: new x128n(value.fee_growth_outside.y),
+            },
+            secondsPerLiquidityOutside: new x128n(
+              value.seconds_per_liquidity_outside,
+            ),
+            sqrtPrice: new x80n(value.sqrt_price),
+            nPositions: new Nat(value.n_positions),
+          };
+        }
+      });
+      return new TickMap(michelsonMap, newTicksMap);
+    }
+    get(key: Int): TickState {
+      return this.map[key.toString()];
+    }
+    async getActual(key: TickIndex): Promise<TickState> {
+      const st: any = await this.michelsonMap.get(key.toString());
       return {
         prev: new Int(st.prev),
         next: new Int(st.next),
@@ -413,21 +555,96 @@ export namespace quipuswapV3Types {
         nPositions: new Nat(st.n_positions),
       };
     }
+    async updateMap(tickIndices: Int[] = []) {
+      let knownTickIndices = Object.keys(this.map);
+      knownTickIndices = knownTickIndices.concat(
+        tickIndices.map(id => id.toString()),
+      );
+      const ticks = await (
+        this.michelsonMap as unknown as any
+      ).getMultipleValues(knownTickIndices);
+
+      ticks.forEach((value, key) => {
+        if (value !== undefined) {
+          this.map[key] = {
+            prev: new Int(value.prev),
+            next: new Int(value.next),
+            liquidityNet: new Int(value.liquidity_net),
+            secondsOutside: new Nat(value.seconds_outside),
+            tickCumulativeOutside: new Int(value.tick_cumulative_outside),
+            feeGrowthOutside: {
+              x: new x128n(value.fee_growth_outside.x),
+              y: new x128n(value.fee_growth_outside.y),
+            },
+            secondsPerLiquidityOutside: new x128n(
+              value.seconds_per_liquidity_outside,
+            ),
+            sqrtPrice: new x80n(value.sqrt_price),
+            nPositions: new Nat(value.n_positions),
+          };
+        }
+      });
+    }
   }
+
+  /**
+   * @description QuipuswapV3 PositionMap
+   * @field map [key: number]: PositionState
+   * @field michelsonMap MichelsonMap
+   */
   export class PositionMap {
-    constructor(public map: MichelsonMap<MichelsonMapKey, unknown>) {}
-    async get(key: Nat): Promise<PositionState> {
-      const st: any = await this.map.get(key.toString());
-      return {
-        lowerTickIndex: new Int(st.lower_tick_index),
-        upperTickIndex: new Int(st.upper_tick_index),
-        owner: new Address(st.owner),
-        liquidity: new Nat(st.liquidity),
-        feeGrowthInsideLast: {
-          x: new x128n(st.fee_growth_inside_last.x),
-          y: new x128n(st.fee_growth_inside_last.y),
-        },
-      };
+    map: { [key: number]: PositionState };
+    constructor(
+      public michelsonMap: MichelsonMap<MichelsonMapKey, unknown>,
+      map: PositionMap["map"],
+    ) {
+      this.map = map;
+    }
+    static async init(michelsonMap, positionIds: Nat[]) {
+      const positions = await michelsonMap.getMultipleValues(positionIds);
+      const newPositions = {};
+      positions.forEach((value, key) => {
+        if (value !== undefined) {
+          newPositions[key] = {
+            lowerTickIndex: new Int(value.lower_tick_index),
+            upperTickIndex: new Int(value.upper_tick_index),
+            owner: value.owner,
+            liquidity: new Nat(value.liquidity),
+            feeGrowthInsideLast: {
+              x: new x128n(value.fee_growth_inside_last.x),
+              y: new x128n(value.fee_growth_inside_last.y),
+            },
+          };
+        }
+      });
+      return new PositionMap(michelsonMap, newPositions);
+    }
+    get(key: Nat): PositionState {
+      return this.map[key.toString()];
+    }
+    async updateMap(positionIds: Nat[] = []) {
+      let knownPositionIds = Object.keys(this.map);
+      knownPositionIds = knownPositionIds.concat(
+        positionIds.map(id => id.toString()),
+      );
+      const positions = await (
+        this.michelsonMap as unknown as any
+      ).getMultipleValues(knownPositionIds);
+
+      positions.forEach((value, key) => {
+        if (value !== undefined) {
+          this.map[key] = {
+            lowerTickIndex: new Int(value.lower_tick_index),
+            upperTickIndex: new Int(value.upper_tick_index),
+            owner: value.owner,
+            liquidity: new Nat(value.liquidity),
+            feeGrowthInsideLast: {
+              x: new x128n(value.fee_growth_inside_last.x),
+              y: new x128n(value.fee_growth_inside_last.y),
+            },
+          };
+        }
+      });
     }
   }
   export class LadderMap {

@@ -20,11 +20,10 @@ export async function tickAccumulatorsInside(
   lowerTi: Int,
   upperTi: Int,
 ) {
-  const lowerTs = await st.ticks.get(lowerTi);
-  const upperTs = await st.ticks.get(upperTi);
+  const lowerTs = st.ticks.get(lowerTi);
+  const upperTs = st.ticks.get(upperTi);
 
   const currentTime = new BigNumber(Math.floor(Date.now() / 1000)).plus(1);
-
   const {
     tick_cumulative: cvTickCumulative,
     seconds_per_liquidity_cumulative: cvSecondsPerLiquidityCumulative,
