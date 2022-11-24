@@ -1,6 +1,6 @@
 import { BigNumber } from "bignumber.js";
 import { QuipuswapV3 } from "./../index";
-import { Int, quipuswapV3Types } from "./../types";
+import { Int, Nat, quipuswapV3Types } from "./../types";
 /**
  *
  * @category Math
@@ -17,6 +17,17 @@ export declare function tickAccumulatorsInside(cfmm: QuipuswapV3, st: quipuswapV
     aFeeGrowth: BigNumber;
     aSecondsPerLiquidity: BigNumber;
 }>;
+export declare function adjustScale(i: Nat | Int, n1?: Nat, n2?: Nat): Nat;
+/**
+ * @category Math
+ * @param i Int index of the tick
+ *
+ * Calculate the expected @sqrt_price@ for a given tick index.
+ * We're doing floating point math in Haskell, so we lose a lot of precision.
+ * To be able to compare a value calculated in Haskell to one calculated in Michelson,
+ * we need to account for that loss of precision, so we reduce the scale
+ */
+export declare function sqrtPriceForTick(i: Int): Nat;
 export declare function shiftLeft(x: BigNumber, y: BigNumber): BigNumber;
 /**
  * A bitwise shift right operation

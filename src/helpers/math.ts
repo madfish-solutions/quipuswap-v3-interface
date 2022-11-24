@@ -2,7 +2,7 @@ import { BigNumber } from "bignumber.js";
 
 import { QuipuswapV3 } from "./../index";
 
-import { Int, quipuswapV3Types } from "./../types";
+import { Int, Nat, quipuswapV3Types } from "./../types";
 
 /**
  *
@@ -58,6 +58,7 @@ export async function tickAccumulatorsInside(
     lowerTickAccOutside: BigNumber,
     upperTickAccOutside: BigNumber,
   ) => {
+    console.log(globalAcc, lowerTickAccOutside, upperTickAccOutside);
     return globalAcc
       .minus(tickAccumulatorBelow(lowerTi, globalAcc, lowerTickAccOutside))
       .minus(tickAccumulatorAbove(upperTi, globalAcc, upperTickAccOutside));
@@ -66,8 +67,8 @@ export async function tickAccumulatorsInside(
   return {
     aSeconds: tickAccumulatorInside(
       currentTime,
-      lowerTs.secondsOutside,
-      upperTs.secondsOutside,
+      lowerTs.secondsOutside.toBignumber(),
+      upperTs.secondsOutside.toBignumber(),
     ),
     aTickCumulative: tickAccumulatorInside(
       cvTickCumulative,
@@ -75,16 +76,51 @@ export async function tickAccumulatorsInside(
       upperTs.tickCumulativeOutside,
     ),
     aFeeGrowth: tickAccumulatorInside(
-      st.feeGrowth.x.plus(st.feeGrowth.y),
-      lowerTs.feeGrowthOutside.x.plus(lowerTs.feeGrowthOutside.y),
-      upperTs.feeGrowthOutside.x.plus(upperTs.feeGrowthOutside.y),
+      st.feeGrowth.x.plus(st.feeGrowth.y).toBignumber(),
+      lowerTs.feeGrowthOutside.x.plus(lowerTs.feeGrowthOutside.y).toBignumber(),
+      upperTs.feeGrowthOutside.x.plus(upperTs.feeGrowthOutside.y).toBignumber(),
     ),
     aSecondsPerLiquidity: tickAccumulatorInside(
       cvSecondsPerLiquidityCumulative,
-      lowerTs.secondsPerLiquidityOutside,
-      upperTs.secondsPerLiquidityOutside,
+      lowerTs.secondsPerLiquidityOutside.toBignumber(),
+      upperTs.secondsPerLiquidityOutside.toBignumber(),
     ),
   };
+}
+
+export function adjustScale(
+  i: Nat | Int,
+  n1: Nat = new Nat(0),
+  n2: Nat = new Nat(0),
+): Nat {
+  const scaleAdjustment = n2.toBignumber().minus(n1);
+  const iNormal = i.toBignumber();
+  if (scaleAdjustment.gte(0)) {
+    return new Nat(iNormal.multipliedBy(new BigNumber(2).pow(scaleAdjustment)));
+  } else {
+    return new Nat(
+      iNormal
+        .dividedBy(new BigNumber(2).pow(scaleAdjustment.negated()))
+        .integerValue(BigNumber.ROUND_FLOOR),
+    );
+  }
+}
+
+/**
+ * @category Math
+ * @param i Int index of the tick
+ *
+ * Calculate the expected @sqrt_price@ for a given tick index.
+ * We're doing floating point math in Haskell, so we lose a lot of precision.
+ * To be able to compare a value calculated in Haskell to one calculated in Michelson,
+ * we need to account for that loss of precision, so we reduce the scale
+ */
+export function sqrtPriceForTick(i: Int): Nat {
+  const x = new BigNumber(Math.sqrt(Math.exp(0.0001)))
+    .pow(i)
+    .multipliedBy(new BigNumber(2).pow(80))
+    .integerValue(BigNumber.ROUND_FLOOR);
+  return adjustScale(new Nat(x), new Nat(80), new Nat(30));
 }
 
 export function shiftLeft(x: BigNumber, y: BigNumber) {
@@ -148,46 +184,61 @@ liquidityDeltaToTokensDelta liquidityDelta lowerTickIndex upperTickIndex current
         | otherwise = 0
   in  PerToken deltaX deltaY
 */
-// async function liquidityDeltaToTokensDelta(
-//   liquidityDelta: BigNumber,
+// export function liquidityDeltaToTokensDelta(
+//   liquidityDelta: Int,
 //   lowerTickIndex: Int,
 //   upperTickIndex: Int,
 //   currentTickIndex: Int,
-//   sqrtPrice: BigNumber,
+//   sqrtPrice: Nat,
 // ) {
-//   const sqrtPriceLower = sqrtPriceFor(lowerTickIndex);
-//   const sqrtPriceUpper = sqrtPriceFor(upperTickIndex);
+//   const sqrtPriceLower = sqrtPriceForTick(lowerTickIndex);
+//   const sqrtPriceUpper = sqrtPriceForTick(upperTickIndex);
 
 //   const deltaY = currentTickIndex.lt(lowerTickIndex)
-//     ? new BigNumber(0)
-//     : currentTickIndex.gte(lowerTickIndex) &&
+//     ? new Int(0)
+//     : lowerTickIndex.lte(currentTickIndex) &&
 //       currentTickIndex.lt(upperTickIndex)
 //     ? liquidityDelta
-//         .multipliedBy(sqrtPrice.minus(sqrtPriceLower))
-//         .dividedBy(new BigNumber(2).pow(80))
+//         .toBignumber()
+//         .multipliedBy(
+//           sqrtPrice.toBignumber().minus(sqrtPriceLower.toBignumber()),
+//         )
+//         .dividedBy(_280)
 //         .integerValue(BigNumber.ROUND_CEIL)
 //     : liquidityDelta
-//         .multipliedBy(sqrtPriceUpper.minus(sqrtPriceLower))
-//         .dividedBy(new BigNumber(2).pow(80))
+//         .toBignumber()
+//         .multipliedBy(
+//           sqrtPriceUpper.toBignumber().minus(sqrtPriceLower.toBignumber()),
+//         )
+//         .dividedBy(_280)
 //         .integerValue(BigNumber.ROUND_CEIL);
 
 //   const deltaX = currentTickIndex.lt(lowerTickIndex)
 //     ? liquidityDelta
-//         .multipliedBy(new BigNumber(2).pow(80))
-//         .multipliedBy(sqrtPriceUpper.minus(sqrtPriceLower))
-//         .dividedBy(sqrtPriceLower.multipliedBy(sqrtPriceUpper))
+//         .toBignumber()
+//         .multipliedBy(_280)
+//         .multipliedBy(
+//           sqrtPriceUpper.toBignumber().minus(sqrtPriceLower.toBignumber()),
+//         )
+//         .dividedBy(
+//           sqrtPriceLower
+//             .toBignumber()
+//             .multipliedBy(sqrtPriceUpper.toBignumber()),
+//         )
 //         .integerValue(BigNumber.ROUND_CEIL)
-//     : currentTickIndex.gte(lowerTickIndex) &&
+//     : lowerTickIndex.lte(currentTickIndex) &&
 //       currentTickIndex.lt(upperTickIndex)
 //     ? liquidityDelta
-//         .multipliedBy(new BigNumber(2).pow(80))
-//         .multipliedBy(sqrtPriceUpper.minus(sqrtPrice))
-//         .dividedBy(sqrtPrice.multipliedBy(sqrtPriceUpper))
+//         .toBignumber()
+//         .multipliedBy(_280)
+//         .multipliedBy(
+//           sqrtPriceUpper.toBignumber().minus(sqrtPrice.toBignumber()),
+//         )
+//         .dividedBy(
+//           sqrtPrice.toBignumber().multipliedBy(sqrtPriceUpper.toBignumber()),
+//         )
 //         .integerValue(BigNumber.ROUND_CEIL)
-//     : new BigNumber(0);
+//     : new Int(0);
 
-//   return {
-//     x: deltaX,
-//     y: deltaY,
-//   };
+//   return new PerToken(deltaX, deltaY);
 // }

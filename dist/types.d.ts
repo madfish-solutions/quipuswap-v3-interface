@@ -14,8 +14,14 @@ import { Address, Timestamp } from "./utils";
  */
 export declare class Nat extends BigNumber {
     constructor(number: BigNumber | number | string);
-    fromPow(precision: number, roundingMode?: BigNumber.RoundingMode): BigNumber;
-    toPow(precision: number, roundingMode?: BigNumber.RoundingMode): BigNumber;
+    static max(...n: BigNumber.Value[]): Nat;
+    static getNat(n: BigNumber): Nat;
+    plus(x: BigNumber.Value): Nat;
+    minus(x: BigNumber.Value | Nat): Nat;
+    multipliedBy(n: BigNumber.Value): Nat;
+    dividedBy(n: BigNumber.Value): Nat;
+    pow(n: BigNumber.Value): Nat;
+    toBignumber(): BigNumber;
 }
 /**
  * @description Type class to represent a Tezos Int type which is a BigNumber
@@ -23,13 +29,16 @@ export declare class Nat extends BigNumber {
  * const int = new Int('new BigNumber(-100)')
  * int.toString() // '-100'
  * int.toFixed() // '-100'
- * int.fromPrecision(6) // BigNumber(-0.0001)
- * int.toPrecision(6) // BigNumber(-1000000)
  */
 export declare class Int extends BigNumber {
     constructor(number: BigNumber | number | string);
-    fromPow(precision: number, roundingMode?: BigNumber.RoundingMode): BigNumber;
-    toPow(precision: number, roundingMode?: BigNumber.RoundingMode): BigNumber;
+    static max(...n: BigNumber.Value[]): Int;
+    plus(x: BigNumber.Value): Int;
+    minus(x: BigNumber.Value | Int): Int;
+    multipliedBy(n: BigNumber.Value, base?: number): Int;
+    dividedBy(n: BigNumber.Value, base?: number): Int;
+    pow(n: BigNumber.Value, m?: BigNumber.Value): Int;
+    toBignumber(): BigNumber;
 }
 export declare enum CallMode {
     returnParams = 0,

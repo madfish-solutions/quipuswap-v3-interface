@@ -32,11 +32,34 @@ class Nat extends bignumber_js_1.BigNumber {
         }
         super(number);
     }
-    fromPow(precision, roundingMode = bignumber_js_1.BigNumber.ROUND_DOWN) {
-        return this.dividedBy(new bignumber_js_1.BigNumber(10).pow(precision)).integerValue(roundingMode);
+    static max(...n) {
+        return new Nat(super.max(...n));
     }
-    toPow(precision, roundingMode = bignumber_js_1.BigNumber.ROUND_DOWN) {
-        return this.multipliedBy(new bignumber_js_1.BigNumber(10).pow(precision)).integerValue(roundingMode);
+    static getNat(n) {
+        if (n.isNegative()) {
+            throw new Error(`Invalid nat: ${n.toString()}`);
+        }
+        else {
+            return new Nat(n);
+        }
+    }
+    plus(x) {
+        return Nat.getNat(super.plus(x));
+    }
+    minus(x) {
+        return Nat.getNat(super.minus(x));
+    }
+    multipliedBy(n) {
+        return Nat.getNat(super.multipliedBy(n));
+    }
+    dividedBy(n) {
+        return Nat.getNat(super.dividedBy(n));
+    }
+    pow(n) {
+        return Nat.getNat(super.pow(n));
+    }
+    toBignumber() {
+        return new bignumber_js_1.BigNumber(this.toString());
     }
 }
 exports.Nat = Nat;
@@ -46,8 +69,6 @@ exports.Nat = Nat;
  * const int = new Int('new BigNumber(-100)')
  * int.toString() // '-100'
  * int.toFixed() // '-100'
- * int.fromPrecision(6) // BigNumber(-0.0001)
- * int.toPrecision(6) // BigNumber(-1000000)
  */
 class Int extends bignumber_js_1.BigNumber {
     constructor(number) {
@@ -57,11 +78,31 @@ class Int extends bignumber_js_1.BigNumber {
         }
         super(number);
     }
-    fromPow(precision, roundingMode = bignumber_js_1.BigNumber.ROUND_DOWN) {
-        return this.dividedBy(new bignumber_js_1.BigNumber(10).pow(precision)).integerValue(roundingMode);
+    static max(...n) {
+        return new Int(super.max(...n));
     }
-    toPow(precision, roundingMode = bignumber_js_1.BigNumber.ROUND_DOWN) {
-        return this.multipliedBy(new bignumber_js_1.BigNumber(10).pow(precision)).integerValue(roundingMode);
+    plus(x) {
+        return new Int(super.plus(x));
+    }
+    minus(x) {
+        return new Int(super.minus(x));
+    }
+    multipliedBy(n, base) {
+        return new Int(super.multipliedBy(n, base));
+    }
+    dividedBy(n, base) {
+        return new Int(super.dividedBy(n, base));
+    }
+    pow(n, m) {
+        if (m) {
+            return new Int(super.pow(n, m));
+        }
+        else {
+            return new Int(super.pow(n));
+        }
+    }
+    toBignumber() {
+        return new bignumber_js_1.BigNumber(super.toString());
     }
 }
 exports.Int = Int;
@@ -136,7 +177,7 @@ var quipuswapV3Types;
                         newCumulativesMap[key] = {
                             time: value.time,
                             tick: {
-                                sum: new x128n(value.tick.sum),
+                                sum: new Int(value.tick.sum),
                                 blockStartValue: value.tick.block_start_value,
                             },
                             spl: {
@@ -169,7 +210,7 @@ var quipuswapV3Types;
                 newCumulativesMap[i] = {
                     time: "0",
                     tick: {
-                        sum: new x128n("0"),
+                        sum: new Int("0"),
                         blockStartValue: new Int("0"),
                     },
                     spl: {
@@ -189,12 +230,12 @@ var quipuswapV3Types;
                 return {
                     time: ts.time,
                     tick: {
-                        sum: new x128n(ts.tick.sum),
-                        blockStartValue: ts.tick.block_start_value,
+                        sum: new Int(ts.tick.sum),
+                        blockStartValue: new Int(ts.tick.block_start_value),
                     },
                     spl: {
                         sum: new x128n(ts.spl.sum),
-                        blockStartLiquidityValue: ts.spl.block_start_liquidity_value,
+                        blockStartLiquidityValue: new Nat(ts.spl.block_start_liquidity_value),
                     },
                 };
             });
@@ -209,12 +250,12 @@ var quipuswapV3Types;
                         this.map[key] = {
                             time: value.time,
                             tick: {
-                                sum: new x128n(value.tick.sum),
-                                blockStartValue: value.tick.block_start_value,
+                                sum: new Int(value.tick.sum),
+                                blockStartValue: new Int(value.tick.block_start_value),
                             },
                             spl: {
                                 sum: new x128n(value.spl.sum),
-                                blockStartLiquidityValue: value.spl.block_start_liquidity_value,
+                                blockStartLiquidityValue: new Nat(value.spl.block_start_liquidity_value),
                             },
                         };
                     }
@@ -349,8 +390,8 @@ var quipuswapV3Types;
                             owner: value.owner,
                             liquidity: new Nat(value.liquidity),
                             feeGrowthInsideLast: {
-                                x: new x128n(value.fee_growth_inside_last.x),
-                                y: new x128n(value.fee_growth_inside_last.y),
+                                x: new x128(value.fee_growth_inside_last.x),
+                                y: new x128(value.fee_growth_inside_last.y),
                             },
                         };
                     }

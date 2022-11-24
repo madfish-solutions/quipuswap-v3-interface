@@ -8,8 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initTimedCumulativesBuffer = exports.initTimedCumulatives = exports.sendBatch = exports.batchify = exports.Timestamp = exports.Address = void 0;
+exports.entries = exports.isMonotonic = exports.actualLength = exports.isInRangeNat = exports.isInRange = exports.initTimedCumulativesBuffer = exports.initTimedCumulatives = exports.sendBatch = exports.batchify = exports.Timestamp = exports.Address = void 0;
+const bignumber_js_1 = __importDefault(require("bignumber.js"));
 const types_1 = require("./types");
 const { validateAddress } = require("@taquito/utils");
 /**
@@ -87,10 +91,56 @@ const initTimedCumulatives = (time) => {
 exports.initTimedCumulatives = initTimedCumulatives;
 const initTimedCumulativesBuffer = (extraReservedSlots) => __awaiter(void 0, void 0, void 0, function* () {
     return {
-        map: yield types_1.quipuswapV3Types.CumulativeBufferMap.initCustom(extraReservedSlots.toNumber()),
+        map: types_1.quipuswapV3Types.CumulativeBufferMap.initCustom(extraReservedSlots.toNumber()),
         first: new types_1.Int(0),
         last: new types_1.Int(0),
         reservedLength: new types_1.Nat(extraReservedSlots.toNumber() + 1),
     };
 });
 exports.initTimedCumulativesBuffer = initTimedCumulativesBuffer;
+/**
+ * @x `isInRange` y $ (down, up)@ checks that @x@ is in the range @[y - down, y + up]@.
+ */
+const isInRange = (x, y, marginDown, marginUp) => {
+    return x.isGreaterThanOrEqualTo(y.minus(marginDown)) &&
+        x.isLessThanOrEqualTo(y.plus(marginUp))
+        ? true
+        : false;
+};
+exports.isInRange = isInRange;
+/**
+ * -Similar to `isInRange`, but checks that the lower bound cannot be less than 0.
+ */
+const isInRangeNat = (x, y, marginDown, marginUp) => {
+    const upperBound = y.plus(marginUp);
+    const lowerBound = marginDown.isLessThanOrEqualTo(y)
+        ? y.minus(marginDown)
+        : new bignumber_js_1.default(0);
+    return x.isGreaterThanOrEqualTo(lowerBound) &&
+        x.isLessThanOrEqualTo(upperBound)
+        ? true
+        : false;
+};
+exports.isInRangeNat = isInRangeNat;
+function actualLength(buffer) {
+    return buffer.last.minus(buffer.first).plus(1);
+}
+exports.actualLength = actualLength;
+/**
+ * Check that values grow monothonically (non-strictly).
+ */
+function isMonotonic(l) {
+    return l.every((v, i) => i === 0 || l[i - 1] <= v);
+}
+exports.isMonotonic = isMonotonic;
+/**
+ * -- All records.
+ */
+function entries(storage) {
+    const buffer = storage.cumulativesBuffer;
+    const map = buffer.map.map;
+    return Object.entries(map)
+        .filter(([k, _]) => buffer.first.lte(new bignumber_js_1.default(k)) && new bignumber_js_1.default(k).lte(buffer.last))
+        .map(([_, v]) => v);
+}
+exports.entries = entries;

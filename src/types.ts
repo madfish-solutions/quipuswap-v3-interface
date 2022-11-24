@@ -30,22 +30,57 @@ export class Nat extends BigNumber {
     super(number);
   }
 
-  fromPow(
-    precision: number,
-    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
-  ): BigNumber {
-    return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
-      roundingMode,
-    );
+  static max(...n: BigNumber.Value[]): Nat {
+    return new Nat(super.max(...n));
   }
-  toPow(
-    precision: number,
-    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
-  ): BigNumber {
-    return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
-      roundingMode,
-    );
+
+  static getNat(n: BigNumber): Nat {
+    if (n.isNegative()) {
+      throw new Error(`Invalid nat: ${n.toString()}`);
+    } else {
+      return new Nat(n);
+    }
   }
+
+  plus(x: BigNumber.Value): Nat {
+    return Nat.getNat(super.plus(x));
+  }
+
+  minus(x: BigNumber.Value | Nat): Nat {
+    return Nat.getNat(super.minus(x));
+  }
+
+  multipliedBy(n: BigNumber.Value): Nat {
+    return Nat.getNat(super.multipliedBy(n));
+  }
+
+  dividedBy(n: BigNumber.Value): Nat {
+    return Nat.getNat(super.dividedBy(n));
+  }
+
+  pow(n: BigNumber.Value): Nat {
+    return Nat.getNat(super.pow(n));
+  }
+
+  toBignumber() {
+    return new BigNumber(this.toString());
+  }
+  // fromPow(
+  //   precision: number,
+  //   roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  // ): BigNumber {
+  //   return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
+  //     roundingMode,
+  //   );
+  // }
+  // toPow(
+  //   precision: number,
+  //   roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  // ): BigNumber {
+  //   return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
+  //     roundingMode,
+  //   );
+  // }
 }
 
 /**
@@ -54,8 +89,6 @@ export class Nat extends BigNumber {
  * const int = new Int('new BigNumber(-100)')
  * int.toString() // '-100'
  * int.toFixed() // '-100'
- * int.fromPrecision(6) // BigNumber(-0.0001)
- * int.toPrecision(6) // BigNumber(-1000000)
  */
 
 export class Int extends BigNumber {
@@ -66,23 +99,53 @@ export class Int extends BigNumber {
     }
     super(number);
   }
+  static max(...n: BigNumber.Value[]): Int {
+    return new Int(super.max(...n));
+  }
 
-  fromPow(
-    precision: number,
-    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
-  ): BigNumber {
-    return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
-      roundingMode,
-    );
+  plus(x: BigNumber.Value): Int {
+    return new Int(super.plus(x));
   }
-  toPow(
-    precision: number,
-    roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
-  ): BigNumber {
-    return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
-      roundingMode,
-    );
+
+  minus(x: BigNumber.Value | Int): Int {
+    return new Int(super.minus(x));
   }
+
+  multipliedBy(n: BigNumber.Value, base?: number): Int {
+    return new Int(super.multipliedBy(n, base));
+  }
+
+  dividedBy(n: BigNumber.Value, base?: number): Int {
+    return new Int(super.dividedBy(n, base));
+  }
+
+  pow(n: BigNumber.Value, m?: BigNumber.Value): Int {
+    if (m) {
+      return new Int(super.pow(n, m));
+    } else {
+      return new Int(super.pow(n));
+    }
+  }
+
+  toBignumber() {
+    return new BigNumber(super.toString());
+  }
+  // fromPow(
+  //   precision: number,
+  //   roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  // ): BigNumber {
+  //   return this.dividedBy(new BigNumber(10).pow(precision)).integerValue(
+  //     roundingMode,
+  //   );
+  // }
+  // toPow(
+  //   precision: number,
+  //   roundingMode: BigNumber.RoundingMode = BigNumber.ROUND_DOWN,
+  // ): BigNumber {
+  //   return this.multipliedBy(new BigNumber(10).pow(precision)).integerValue(
+  //     roundingMode,
+  //   );
+  // }
 }
 
 export enum CallMode {
@@ -412,7 +475,7 @@ export namespace quipuswapV3Types {
           newCumulativesMap[key] = {
             time: value.time,
             tick: {
-              sum: new x128n(value.tick.sum),
+              sum: new Int(value.tick.sum),
               blockStartValue: value.tick.block_start_value,
             },
             spl: {
@@ -445,7 +508,7 @@ export namespace quipuswapV3Types {
         newCumulativesMap[i] = {
           time: "0",
           tick: {
-            sum: new x128n("0"),
+            sum: new Int("0"),
             blockStartValue: new Int("0"),
           },
           spl: {
@@ -469,12 +532,12 @@ export namespace quipuswapV3Types {
       return {
         time: ts.time,
         tick: {
-          sum: new x128n(ts.tick.sum),
-          blockStartValue: ts.tick.block_start_value,
+          sum: new Int(ts.tick.sum),
+          blockStartValue: new Int(ts.tick.block_start_value),
         },
         spl: {
           sum: new x128n(ts.spl.sum),
-          blockStartLiquidityValue: ts.spl.block_start_liquidity_value,
+          blockStartLiquidityValue: new Nat(ts.spl.block_start_liquidity_value),
         },
       };
     }
@@ -490,12 +553,14 @@ export namespace quipuswapV3Types {
           this.map[key] = {
             time: value.time,
             tick: {
-              sum: new x128n(value.tick.sum),
-              blockStartValue: value.tick.block_start_value,
+              sum: new Int(value.tick.sum),
+              blockStartValue: new Int(value.tick.block_start_value),
             },
             spl: {
               sum: new x128n(value.spl.sum),
-              blockStartLiquidityValue: value.spl.block_start_liquidity_value,
+              blockStartLiquidityValue: new Nat(
+                value.spl.block_start_liquidity_value,
+              ),
             },
           };
         }
@@ -639,8 +704,8 @@ export namespace quipuswapV3Types {
             owner: value.owner,
             liquidity: new Nat(value.liquidity),
             feeGrowthInsideLast: {
-              x: new x128n(value.fee_growth_inside_last.x),
-              y: new x128n(value.fee_growth_inside_last.y),
+              x: new x128(value.fee_growth_inside_last.x),
+              y: new x128(value.fee_growth_inside_last.y),
             },
           };
         }

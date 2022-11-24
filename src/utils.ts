@@ -97,7 +97,7 @@ export const initTimedCumulativesBuffer = async (
   extraReservedSlots: Nat,
 ): Promise<quipuswapV3Types.TimedCumulativesBuffer> => {
   return {
-    map: await quipuswapV3Types.CumulativeBufferMap.initCustom(
+    map: quipuswapV3Types.CumulativeBufferMap.initCustom(
       extraReservedSlots.toNumber(),
     ),
     first: new Int(0),
@@ -105,3 +105,64 @@ export const initTimedCumulativesBuffer = async (
     reservedLength: new Nat(extraReservedSlots.toNumber() + 1),
   };
 };
+
+/**
+ * @x `isInRange` y $ (down, up)@ checks that @x@ is in the range @[y - down, y + up]@.
+ */
+export const isInRange = (
+  x: BigNumber,
+  y: BigNumber,
+  marginDown: BigNumber,
+  marginUp: BigNumber,
+): boolean => {
+  return x.isGreaterThanOrEqualTo(y.minus(marginDown)) &&
+    x.isLessThanOrEqualTo(y.plus(marginUp))
+    ? true
+    : false;
+};
+
+/**
+ * -Similar to `isInRange`, but checks that the lower bound cannot be less than 0.
+ */
+export const isInRangeNat = (
+  x: BigNumber,
+  y: BigNumber,
+  marginDown: BigNumber,
+  marginUp: BigNumber,
+): boolean => {
+  const upperBound = y.plus(marginUp);
+  const lowerBound = marginDown.isLessThanOrEqualTo(y)
+    ? y.minus(marginDown)
+    : new BigNumber(0);
+  return x.isGreaterThanOrEqualTo(lowerBound) &&
+    x.isLessThanOrEqualTo(upperBound)
+    ? true
+    : false;
+};
+
+export function actualLength(buffer: quipuswapV3Types.TimedCumulativesBuffer) {
+  return buffer.last.minus(buffer.first).plus(1);
+}
+
+/**
+ * Check that values grow monothonically (non-strictly).
+ */
+export function isMonotonic<T>(l: T[]) {
+  return l.every((v, i) => i === 0 || l[i - 1] <= v);
+}
+
+/**
+ * -- All records.
+ */
+export function entries(
+  storage: quipuswapV3Types.Storage,
+): quipuswapV3Types.TimedCumulative[] {
+  const buffer = storage.cumulativesBuffer;
+  const map = buffer.map.map;
+  return Object.entries(map)
+    .filter(
+      ([k, _]) =>
+        buffer.first.lte(new BigNumber(k)) && new BigNumber(k).lte(buffer.last),
+    )
+    .map(([_, v]) => v);
+}
