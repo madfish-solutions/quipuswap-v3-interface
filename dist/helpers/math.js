@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.adjustScale = exports.tickAccumulatorsInside = void 0;
+exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.adjustScale = exports.tickAccumulatorsInside = void 0;
 const bignumber_js_1 = require("bignumber.js");
 const types_1 = require("./../types");
 /**
@@ -101,107 +101,67 @@ function shiftRight(x, y) {
 }
 exports.shiftRight = shiftRight;
 /**
- * -- | When adding @liquidity_delta@ to a position, calculate how many tokens will need to be deposited/withdrawn.
--- Due to the floating-point math used in `sqrtPriceFor`, this function has a certain margin of error.
-liquidityDeltaToTokensDelta :: Integer -> TickIndex -> TickIndex -> TickIndex -> X 80 Natural -> PerToken Integer
-liquidityDeltaToTokensDelta liquidityDelta lowerTickIndex upperTickIndex currentTickIndex sqrtPrice' =
-  let
-      sqrtPrice     = fromIntegral @Natural @Integer $ pickX sqrtPrice'
-      sqrtPriceLower = fromIntegral @Natural @Integer $ pickX $ adjustScale @80 $ sqrtPriceFor lowerTickIndex
-      sqrtPriceUpper = fromIntegral @Natural @Integer $ pickX $ adjustScale @80 $ sqrtPriceFor upperTickIndex
-
-      -- Equation 6.29
-      deltaY
-        | currentTickIndex < lowerTickIndex = 0
-        | lowerTickIndex <= currentTickIndex && currentTickIndex < upperTickIndex =
-            {-
-              ΔL * (√P - √pil)
-
-              Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
-                liquidityDelta * (sqrtPrice / 2^80 - sqrtPriceLower / 2^80)
-              Using the distributive property of division:
-                liquidityDelta * (sqrtPrice - sqrtPriceLower) / 2^80
-            -}
-            liquidityDelta * (sqrtPrice - sqrtPriceLower) `divUp` _280
-        | otherwise =
-            liquidityDelta * (sqrtPriceUpper - sqrtPriceLower) `divUp` _280
-
-      -- Equation 6.30
-      deltaX
-        | currentTickIndex < lowerTickIndex =
-            (liquidityDelta * _280 * (-sqrtPriceLower + sqrtPriceUpper)) `divUp` (sqrtPriceLower * sqrtPriceUpper)
-        | lowerTickIndex <= currentTickIndex && currentTickIndex < upperTickIndex =
-            {-
-              ΔL * (1/√P - 1/√piu)
-
-              Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
-                liquidityDelta * (1 / (sqrtPrice / 2^80) - 1 / (sqrtPriceUpper / 2^80))
-              Simplifying the fractions:
-                liquidityDelta * (2^80 / sqrtPrice) - (2^80 / sqrtPriceUpper)
-              The least common denominator is `sqrtPrice * sqrtPriceUpper)`,
-              so we multiply the first fraction by sqrtPriceUpper and the second by sqrtPrice:
-                liquidityDelta * ((2^80 * sqrtPriceUpper) / (sqrtPrice * sqrtPriceUpper)) - ((2^80 * sqrtPrice) / (sqrtPriceUpper * sqrtPrice))
-              Subtracting the two fractions:
-                liquidityDelta * (2^80 * sqrtPriceUpper - 2^80 * sqrtPrice) / (sqrtPrice * sqrtPriceUpper)
-              Using the distributive property of multiplication:
-                liquidityDelta * 2^80 * (sqrtPriceUpper - sqrtPrice) / (sqrtPrice * sqrtPriceUpper)
-            -}
-            (liquidityDelta * _280 * (sqrtPriceUpper - sqrtPrice)) `divUp` (sqrtPrice * sqrtPriceUpper)
-        | otherwise = 0
-  in  PerToken deltaX deltaY
-*/
-// export function liquidityDeltaToTokensDelta(
-//   liquidityDelta: Int,
-//   lowerTickIndex: Int,
-//   upperTickIndex: Int,
-//   currentTickIndex: Int,
-//   sqrtPrice: Nat,
-// ) {
-//   const sqrtPriceLower = sqrtPriceForTick(lowerTickIndex);
-//   const sqrtPriceUpper = sqrtPriceForTick(upperTickIndex);
-//   const deltaY = currentTickIndex.lt(lowerTickIndex)
-//     ? new Int(0)
-//     : lowerTickIndex.lte(currentTickIndex) &&
-//       currentTickIndex.lt(upperTickIndex)
-//     ? liquidityDelta
-//         .toBignumber()
-//         .multipliedBy(
-//           sqrtPrice.toBignumber().minus(sqrtPriceLower.toBignumber()),
-//         )
-//         .dividedBy(_280)
-//         .integerValue(BigNumber.ROUND_CEIL)
-//     : liquidityDelta
-//         .toBignumber()
-//         .multipliedBy(
-//           sqrtPriceUpper.toBignumber().minus(sqrtPriceLower.toBignumber()),
-//         )
-//         .dividedBy(_280)
-//         .integerValue(BigNumber.ROUND_CEIL);
-//   const deltaX = currentTickIndex.lt(lowerTickIndex)
-//     ? liquidityDelta
-//         .toBignumber()
-//         .multipliedBy(_280)
-//         .multipliedBy(
-//           sqrtPriceUpper.toBignumber().minus(sqrtPriceLower.toBignumber()),
-//         )
-//         .dividedBy(
-//           sqrtPriceLower
-//             .toBignumber()
-//             .multipliedBy(sqrtPriceUpper.toBignumber()),
-//         )
-//         .integerValue(BigNumber.ROUND_CEIL)
-//     : lowerTickIndex.lte(currentTickIndex) &&
-//       currentTickIndex.lt(upperTickIndex)
-//     ? liquidityDelta
-//         .toBignumber()
-//         .multipliedBy(_280)
-//         .multipliedBy(
-//           sqrtPriceUpper.toBignumber().minus(sqrtPrice.toBignumber()),
-//         )
-//         .dividedBy(
-//           sqrtPrice.toBignumber().multipliedBy(sqrtPriceUpper.toBignumber()),
-//         )
-//         .integerValue(BigNumber.ROUND_CEIL)
-//     : new Int(0);
-//   return new PerToken(deltaX, deltaY);
-// }
+ * When adding @liquidity_delta@ to a position, calculate how many tokens will need to be deposited/withdrawn.
+ * Due to the floating-point math used in `sqrtPriceFor`, this function has a certain margin of error.
+ * @param liquidityDelta The amount of liquidity to add to the position
+ */
+function liquidityDeltaToTokensDelta(liquidityDelta, lowerTickIndex, upperTickIndex, currentTickIndex, sqrtPrice) {
+    const sqrtPriceLower = sqrtPriceForTick(lowerTickIndex);
+    const sqrtPriceUpper = sqrtPriceForTick(upperTickIndex);
+    const _280 = new bignumber_js_1.BigNumber(2).pow(80);
+    // Equation 6.29
+    const deltaY = (() => {
+        if (currentTickIndex.lt(lowerTickIndex)) {
+            return new types_1.Int(0);
+        }
+        else if (lowerTickIndex.lte(currentTickIndex) &&
+            currentTickIndex.lt(upperTickIndex)) {
+            /**
+             * ΔL * (√P - √pil)
+      
+             * Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
+             *   liquidityDelta * (sqrtPrice / 2^80 - sqrtPriceLower / 2^80)
+             * Using the distributive property of division:
+             *   liquidityDelta * (sqrtPrice - sqrtPriceLower) / 2^80
+             */
+            return new types_1.Int(liquidityDelta
+                .toBignumber()
+                .multipliedBy(sqrtPrice.toBignumber().minus(sqrtPriceLower.toBignumber()))
+                .dividedBy(_280)
+                .integerValue(bignumber_js_1.BigNumber.ROUND_CEIL));
+        }
+        else {
+            return new types_1.Int(liquidityDelta
+                .toBignumber()
+                .multipliedBy(sqrtPriceUpper.toBignumber().minus(sqrtPriceLower.toBignumber()))
+                .dividedBy(_280)
+                .integerValue(bignumber_js_1.BigNumber.ROUND_CEIL));
+        }
+    })();
+    const deltaX = (() => {
+        if (currentTickIndex.lt(lowerTickIndex)) {
+            return new types_1.Int(liquidityDelta
+                .toBignumber()
+                .multipliedBy(_280)
+                .multipliedBy(sqrtPriceLower.toBignumber().minus(sqrtPriceUpper.toBignumber()))
+                .dividedBy(sqrtPriceLower
+                .toBignumber()
+                .multipliedBy(sqrtPriceUpper.toBignumber()))
+                .integerValue(bignumber_js_1.BigNumber.ROUND_CEIL));
+        }
+        else if (lowerTickIndex.lte(currentTickIndex) &&
+            currentTickIndex.lt(upperTickIndex)) {
+            return new types_1.Int(liquidityDelta
+                .toBignumber()
+                .multipliedBy(_280)
+                .multipliedBy(sqrtPriceUpper.toBignumber().minus(sqrtPrice.toBignumber()))
+                .dividedBy(sqrtPrice.toBignumber().multipliedBy(sqrtPriceUpper.toBignumber()))
+                .integerValue(bignumber_js_1.BigNumber.ROUND_CEIL));
+        }
+        else {
+            return new types_1.Int(0);
+        }
+    })();
+    return { x: deltaX, y: deltaY };
+}
+exports.liquidityDeltaToTokensDelta = liquidityDeltaToTokensDelta;
