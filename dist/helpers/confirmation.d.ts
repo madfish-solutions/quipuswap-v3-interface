@@ -1,6 +1,6 @@
 import { OperationEntry, BlockResponse } from "@taquito/rpc";
 import { TezosToolkit } from "@taquito/taquito";
-export declare type ConfirmOperationOptions = {
+export type ConfirmOperationOptions = {
     initializedAt?: number;
     fromBlockLevel?: number;
     signal?: AbortSignal;

@@ -45,7 +45,7 @@ export declare enum CallMode {
     returnOperation = 1,
     returnConfirmatedOperation = 2
 }
-export declare type CallSettings = {
+export type CallSettings = {
     swapXY: CallMode;
     swapYX: CallMode;
     setPosition: CallMode;
@@ -54,11 +54,11 @@ export declare type CallSettings = {
     updateOperators: CallMode;
     increaseObservationCount: CallMode;
 };
-export declare type ReturnMethodType = {
+export type ReturnMethodType = {
     callParams: any[];
     callback: (contract: Contract, ...params: any[]) => TransferParams;
 };
-export declare type QsReturn = TransferParams | WalletOperationBatch;
+export type QsReturn = TransferParams | WalletOperationBatch;
 export declare namespace tezosTypes {
     type TezosContract = ReturnType<TezosToolkit["contract"]["at"]>;
     type Batch = OperationBatch | WalletOperationBatch;
@@ -220,13 +220,13 @@ export declare namespace quipuswapV3Types {
         tokenY: TokenType;
         tickSpacing: Nat;
     };
-    type Fixed_point = {
+    type FixedPoint = {
         v: Nat;
         offset: Int;
     };
-    type Ladder_key = {
-        exp: Nat;
-        positive: Boolean;
+    type LadderKey = {
+        exp: number;
+        positive: boolean;
     };
     type Ladder = MichelsonMap<MichelsonMapKey, unknown>;
     type SetPosition = {
@@ -279,7 +279,7 @@ export declare namespace quipuswapV3Types {
     class LadderMap {
         map: MichelsonMap<MichelsonMapKey, unknown>;
         constructor(map: MichelsonMap<MichelsonMapKey, unknown>);
-        get(key: Ladder_key): Promise<Fixed_point>;
+        get(key: LadderKey): Promise<FixedPoint>;
     }
     type Storage = {
         liquidity: Nat;

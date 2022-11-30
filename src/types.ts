@@ -445,8 +445,8 @@ export namespace quipuswapV3Types {
   };
 
   //// See defaults.mligo for more info
-  export type Fixed_point = { v: Nat; offset: Int };
-  export type Ladder_key = { exp: Nat; positive: Boolean };
+  export type FixedPoint = { v: Nat; offset: Int };
+  export type LadderKey = { exp: number; positive: boolean };
   export type Ladder = MichelsonMap<MichelsonMapKey, unknown>;
 
   export type SetPosition = {
@@ -714,11 +714,11 @@ export namespace quipuswapV3Types {
   }
   export class LadderMap {
     constructor(public map: MichelsonMap<MichelsonMapKey, unknown>) {}
-    async get(key: Ladder_key): Promise<Fixed_point> {
-      return (await this.map.get({
+    async get(key: LadderKey): Promise<FixedPoint> {
+      return this.map.get({
         exp: key.exp.toString(),
         positive: key.positive,
-      })) as Fixed_point;
+      }) as FixedPoint;
     }
   }
 

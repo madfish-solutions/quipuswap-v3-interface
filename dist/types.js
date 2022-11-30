@@ -406,10 +406,10 @@ var quipuswapV3Types;
         }
         get(key) {
             return __awaiter(this, void 0, void 0, function* () {
-                return (yield this.map.get({
+                return this.map.get({
                     exp: key.exp.toString(),
                     positive: key.positive,
-                }));
+                });
             });
         }
     }
