@@ -506,6 +506,14 @@ export class QuipuswapV3 {
     } as unknown as TransferParams;
   }
 
+  @extendCallQS
+  async inreaseObservationCount(count: BigNumber) {
+    return {
+      callParams: [new Nat(count)],
+      callback: QuipuswapV3Methods.increaseObservationCount,
+    } as unknown as TransferParams;
+  }
+
   /** Get Oracle values at certain given range. Reimplemented from Haskell Code below this line.
    * observe cfmm = do
   currentTime <- getNow
@@ -526,5 +534,9 @@ export class QuipuswapV3 {
     }
 
     return await this.contract.views.observe(timestamps).read();
+  }
+
+  async setCallSetting(callSetting: CallSettings) {
+    this.callSettings = callSetting;
   }
 }

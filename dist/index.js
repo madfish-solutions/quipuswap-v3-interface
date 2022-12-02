@@ -381,6 +381,14 @@ class QuipuswapV3 {
             };
         });
     }
+    inreaseObservationCount(count) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return {
+                callParams: [new types_1.Nat(count)],
+                callback: QuipuswapV3Methods.increaseObservationCount,
+            };
+        });
+    }
     /** Get Oracle values at certain given range. Reimplemented from Haskell Code below this line.
      * observe cfmm = do
     currentTime <- getNow
@@ -398,6 +406,11 @@ class QuipuswapV3 {
                 return yield this.contract.views.observe([now]).read();
             }
             return yield this.contract.views.observe(timestamps).read();
+        });
+    }
+    setCallSetting(callSetting) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.callSettings = callSetting;
         });
     }
 }
@@ -419,4 +432,7 @@ __decorate([
 __decorate([
     decorators_1.extendCallQS
 ], QuipuswapV3.prototype, "updateOperators", null);
+__decorate([
+    decorators_1.extendCallQS
+], QuipuswapV3.prototype, "inreaseObservationCount", null);
 exports.QuipuswapV3 = QuipuswapV3;

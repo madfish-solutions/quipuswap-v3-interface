@@ -97,6 +97,7 @@ export declare class QuipuswapV3 {
      * @returns TransferParam | WalletOperationBatch
      */
     updateOperators(params: fa2Types.UpdateOperators[]): Promise<QsReturn>;
+    inreaseObservationCount(count: BigNumber): Promise<TransferParams>;
     /** Get Oracle values at certain given range. Reimplemented from Haskell Code below this line.
      * observe cfmm = do
     currentTime <- getNow
@@ -107,4 +108,5 @@ export declare class QuipuswapV3 {
       _ -> failure "Expected to get exactly 1 CumulativeValue"
     */
     observe(timestamps?: string[]): Promise<quipuswapV3Types.CumulativesValue>;
+    setCallSetting(callSetting: CallSettings): Promise<void>;
 }
