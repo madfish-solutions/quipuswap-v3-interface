@@ -262,7 +262,7 @@ export class QuipuswapV3 {
   contract: Contract;
   storage: quipuswapV3Types.Storage;
   constructor(
-    private callSettings: CallSettings = defaultCallSettings,
+    public callSettings: CallSettings = defaultCallSettings,
     public syncInterval: number = 0,
     public confirmtaionTimeout: number = 500000,
   ) {}
@@ -536,7 +536,7 @@ export class QuipuswapV3 {
     return await this.contract.views.observe(timestamps).read();
   }
 
-  async setCallSetting(callSetting: CallSettings) {
+  setCallSetting(callSetting: CallSettings) {
     this.callSettings = callSetting;
   }
 }

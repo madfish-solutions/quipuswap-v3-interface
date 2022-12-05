@@ -409,9 +409,7 @@ class QuipuswapV3 {
         });
     }
     setCallSetting(callSetting) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.callSettings = callSetting;
-        });
+        this.callSettings = callSetting;
     }
 }
 __decorate([

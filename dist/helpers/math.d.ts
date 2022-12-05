@@ -217,3 +217,76 @@ export declare function liquidityDeltaToTokensDelta(liquidityDelta: Int, lowerTi
     x: Int;
     y: Int;
 };
+/**
+ *  Calculate the new price after depositing @dx@ tokens **while swapping within a single tick**.
+
+Equation 6.15
+  Δ(1 / √P) = Δx / L
+  1 / √P_new - 1 / √P_old = Δx / L
+
+  Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
+    1 / (sqrt_price_new / 2^80) - 1 / (sqrt_price_old / 2^80) = dx / liquidity
+  Simplifying the fractions:
+    2^80 / sqrt_price_new - 2^80 / sqrt_price_old = dx / liquidity
+  Adding `2^80 / sqrt_price_old` to both sides:
+    2^80 / sqrt_price_new = dx / liquidity + 2^80 / sqrt_price_old
+  Multiplying both sides by sqrt_price_new:
+    2^80 = (dx / liquidity + 2^80 / sqrt_price_old) * sqrt_price_new
+  Dividing both sides by (dx / liquidity + 2^80 / sqrt_price_old):
+    2^80 / (dx / liquidity + 2^80 / sqrt_price_old) = sqrt_price_new
+ -}
+ */
+export declare function calcNewPriceX(sqrtPriceOld: Nat, liquidity: Nat, dx: Nat): Nat;
+/**
+Calculate the new `sqrt_price` after a deposit of `dy` `y` tokens.
+    Derived from equation 6.13:
+        Δ(√P) = Δy /L
+        √P_new - √P_old = Δy /L
+    Since we store √P mutiplied by 2^80 (i.e. sqrt_price = √P * 2^80):
+        sqrt_price_new / 2^80 - sqrt_price_old / 2^80 = Δy /L
+    Solving for sqrt_price_new:
+        sqrt_price_new = 2^80 * (Δy / L) + sqrt_price_old
+
+    Example:
+        Assume a pool with 10 `x` tokens and 1000 `y` tokens, which implies:
+            L = sqrt(xy) = sqrt(10*1000) = 100
+            P = y/x = 1000/10 = 100
+            sqrt_price = sqrt(100) * 2^80 = 12089258196146291747061760
+
+        Adding 1000 `y` tokens to the pool should result in:
+            y = 2000
+            x = L^2 / y = 5
+            P = 2000 / 5 = 400
+            sqrt_price = sqrt(400) * 2^80 = 24178516392292583494123520
+
+*/
+export declare function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat): Nat;
+/**
+ *
+-- | Equation 6.21
+--
+-- Calculates the initial value of the accumulators tracked by a tick's state.
+initTickAccumulators
+  :: MonadEmulated caps base m
+  => ContractHandler Parameter st -> Storage -> TickIndex
+  -> m Accumulators
+initTickAccumulators cfmm st tickIndex =
+  if sCurTickIndex st >= tickIndex
+    then do
+      secondsOutside <- getNow <&> timestampToSeconds
+      CumulativesValue tickCumulative secondsPerLiquidity <- observe cfmm
+      pure Accumulators
+        { aSeconds = secondsOutside
+        , aTickCumulative = tickCumulative
+        , aFeeGrowth = fmap (fromIntegral @Natural @Integer) <$> sFeeGrowth st
+        , aSecondsPerLiquidity = fromIntegral @Natural @Integer <$> secondsPerLiquidity
+        }
+    else do
+      -- pure (0, 0, PerToken 0 0, 0)
+      pure Accumulators
+        { aSeconds = 0
+        , aTickCumulative = 0
+        , aFeeGrowth = PerToken 0 0
+        , aSecondsPerLiquidity = 0
+        }
+ */

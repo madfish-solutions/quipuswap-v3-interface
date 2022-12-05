@@ -22,7 +22,7 @@ export declare class QuipuswapV3Storage {
     static getRawStorage(contract: Contract): Promise<any>;
 }
 export declare class QuipuswapV3 {
-    private callSettings;
+    callSettings: CallSettings;
     syncInterval: number;
     confirmtaionTimeout: number;
     tezos: TezosToolkit;
@@ -108,5 +108,5 @@ export declare class QuipuswapV3 {
       _ -> failure "Expected to get exactly 1 CumulativeValue"
     */
     observe(timestamps?: string[]): Promise<quipuswapV3Types.CumulativesValue>;
-    setCallSetting(callSetting: CallSettings): Promise<void>;
+    setCallSetting(callSetting: CallSettings): void;
 }

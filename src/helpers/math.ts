@@ -455,83 +455,115 @@ export function liquidityDeltaToTokensDelta(
   })();
   return { x: deltaX, y: deltaY };
 }
-// function sqrtPriceForTick(tickIndex) {
-//   const _32 = jsbi_1.default.exponentiate(
-//     jsbi_1.default.BigInt(2),
-//     jsbi_1.default.BigInt(32),
-//   );
-//   const ZERO = jsbi_1.default.BigInt(0);
-//   const ONE = jsbi_1.default.BigInt(1);
-//   // used in liquidity amount math
-//   // const _80 = jsbi_1.default.exponentiate(jsbi_1.default.BigInt(2), jsbi_1.default.BigInt(80));
-//   const MaxUint256 = jsbi_1.default.BigInt(
-//     "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-//   );
-//   const mulShift = (val, mulBy) => {
-//     return jsbi_1.default.signedRightShift(
-//       jsbi_1.default.multiply(val, jsbi_1.default.BigInt(mulBy)),
-//       jsbi_1.default.BigInt(128),
-//     );
+
+/**
+ *  Calculate the new price after depositing @dx@ tokens **while swapping within a single tick**.
+
+Equation 6.15
+  Δ(1 / √P) = Δx / L
+  1 / √P_new - 1 / √P_old = Δx / L
+
+  Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
+    1 / (sqrt_price_new / 2^80) - 1 / (sqrt_price_old / 2^80) = dx / liquidity
+  Simplifying the fractions:
+    2^80 / sqrt_price_new - 2^80 / sqrt_price_old = dx / liquidity
+  Adding `2^80 / sqrt_price_old` to both sides:
+    2^80 / sqrt_price_new = dx / liquidity + 2^80 / sqrt_price_old
+  Multiplying both sides by sqrt_price_new:
+    2^80 = (dx / liquidity + 2^80 / sqrt_price_old) * sqrt_price_new
+  Dividing both sides by (dx / liquidity + 2^80 / sqrt_price_old):
+    2^80 / (dx / liquidity + 2^80 / sqrt_price_old) = sqrt_price_new
+ -}
+ */
+export function calcNewPriceX(sqrtPriceOld: Nat, liquidity: Nat, dx: Nat): Nat {
+  const shiftedL80 = shiftLeft(
+    liquidity.multipliedBy(sqrtPriceOld),
+    new BigNumber(80),
+  );
+  const shiftedL80PlusDxSqrtPriceOld = shiftLeft(
+    liquidity,
+    new BigNumber(80),
+  ).plus(dx.multipliedBy(sqrtPriceOld));
+  return new Nat(
+    shiftedL80
+      .dividedBy(shiftedL80PlusDxSqrtPriceOld)
+      .integerValue(BigNumber.ROUND_FLOOR),
+  );
+}
+
+/**
+Calculate the new `sqrt_price` after a deposit of `dy` `y` tokens.
+    Derived from equation 6.13:
+        Δ(√P) = Δy /L
+        √P_new - √P_old = Δy /L
+    Since we store √P mutiplied by 2^80 (i.e. sqrt_price = √P * 2^80):
+        sqrt_price_new / 2^80 - sqrt_price_old / 2^80 = Δy /L
+    Solving for sqrt_price_new:
+        sqrt_price_new = 2^80 * (Δy / L) + sqrt_price_old
+
+    Example:
+        Assume a pool with 10 `x` tokens and 1000 `y` tokens, which implies:
+            L = sqrt(xy) = sqrt(10*1000) = 100
+            P = y/x = 1000/10 = 100
+            sqrt_price = sqrt(100) * 2^80 = 12089258196146291747061760
+
+        Adding 1000 `y` tokens to the pool should result in:
+            y = 2000
+            x = L^2 / y = 5
+            P = 2000 / 5 = 400
+            sqrt_price = sqrt(400) * 2^80 = 24178516392292583494123520
+
+*/
+export function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat): Nat {
+  const shiftedDy80 = shiftLeft(dy, new BigNumber(80));
+  return new Nat(
+    shiftedDy80
+      .dividedBy(liquidity.plus(sqrtPriceOld))
+      .integerValue(BigNumber.ROUND_CEIL),
+  );
+}
+
+/**
+ * 
+-- | Equation 6.21
+--
+-- Calculates the initial value of the accumulators tracked by a tick's state.
+initTickAccumulators
+  :: MonadEmulated caps base m
+  => ContractHandler Parameter st -> Storage -> TickIndex
+  -> m Accumulators
+initTickAccumulators cfmm st tickIndex =
+  if sCurTickIndex st >= tickIndex
+    then do
+      secondsOutside <- getNow <&> timestampToSeconds
+      CumulativesValue tickCumulative secondsPerLiquidity <- observe cfmm
+      pure Accumulators
+        { aSeconds = secondsOutside
+        , aTickCumulative = tickCumulative
+        , aFeeGrowth = fmap (fromIntegral @Natural @Integer) <$> sFeeGrowth st
+        , aSecondsPerLiquidity = fromIntegral @Natural @Integer <$> secondsPerLiquidity
+        }
+    else do
+      -- pure (0, 0, PerToken 0 0, 0)
+      pure Accumulators
+        { aSeconds = 0
+        , aTickCumulative = 0
+        , aFeeGrowth = PerToken 0 0
+        , aSecondsPerLiquidity = 0
+        }
+ */
+
+// export async function initTickAccumulators(
+//   cfmm: QuipuswapV3,
+//   st: Storage,
+//   tickIndex: quipuswapV3Types.TickIndex,
+// ): Promise<Accumulators> {
+//   const secondsOutside = await getNow().then(timestampToSeconds);
+//   const tickCumulative = await observe(cfmm);
+//   return {
+//     aSeconds: secondsOutside,
+//     aTickCumulative: tickCumulative,
+//     aFeeGrowth: st.feeGrowth,
+//     aSecondsPerLiquidity: 0,
 //   };
-//   const tick = tickIndex.toNumber();
-
-//   const absTick = tick < 0 ? tick * -1 : tick;
-//   let ratio =
-//     (absTick & 0x1) != 0
-//       ? jsbi_1.default.BigInt("0xfffcb933bd6fad37aa2d162d1a594001")
-//       : jsbi_1.default.BigInt("0x100000000000000000000000000000000");
-//   if ((absTick & 0x2) != 0)
-//     ratio = mulShift(ratio, "0xfff97272373d413259a46990580e213a");
-//   if ((absTick & 0x4) != 0)
-//     ratio = mulShift(ratio, "0xfff2e50f5f656932ef12357cf3c7fdcc");
-//   if ((absTick & 0x8) != 0)
-//     ratio = mulShift(ratio, "0xffe5caca7e10e4e61c3624eaa0941cd0");
-//   if ((absTick & 0x10) != 0)
-//     ratio = mulShift(ratio, "0xffcb9843d60f6159c9db58835c926644");
-//   if ((absTick & 0x20) != 0)
-//     ratio = mulShift(ratio, "0xff973b41fa98c081472e6896dfb254c0");
-//   if ((absTick & 0x40) != 0)
-//     ratio = mulShift(ratio, "0xff2ea16466c96a3843ec78b326b52861");
-//   if ((absTick & 0x80) != 0)
-//     ratio = mulShift(ratio, "0xfe5dee046a99a2a811c461f1969c3053");
-//   if ((absTick & 0x100) != 0)
-//     ratio = mulShift(ratio, "0xfcbe86c7900a88aedcffc83b479aa3a4");
-//   if ((absTick & 0x200) != 0)
-//     ratio = mulShift(ratio, "0xf987a7253ac413176f2b074cf7815e54");
-//   if ((absTick & 0x400) != 0)
-//     ratio = mulShift(ratio, "0xf3392b0822b70005940c7a398e4b70f3");
-//   if ((absTick & 0x800) != 0)
-//     ratio = mulShift(ratio, "0xe7159475a2c29b7443b29c7fa6e889d9");
-//   if ((absTick & 0x1000) != 0)
-//     ratio = mulShift(ratio, "0xd097f3bdfd2022b8845ad8f792aa5825");
-//   if ((absTick & 0x2000) != 0)
-//     ratio = mulShift(ratio, "0xa9f746462d870fdf8a65dc1f90e061e5");
-//   if ((absTick & 0x4000) != 0)
-//     ratio = mulShift(ratio, "0x70d869a156d2a1b890bb3df62baf32f7");
-//   if ((absTick & 0x8000) != 0)
-//     ratio = mulShift(ratio, "0x31be135f97d08fd981231505542fcfa6");
-//   if ((absTick & 0x10000) != 0)
-//     ratio = mulShift(ratio, "0x9aa508b5b7a84e1c677de54f3e99bc9");
-//   if ((absTick & 0x20000) != 0)
-//     ratio = mulShift(ratio, "0x5d6af8dedb81196699c329225ee604");
-//   if ((absTick & 0x40000) != 0)
-//     ratio = mulShift(ratio, "0x2216e584f5fa1ea926041bedfe98");
-//   if ((absTick & 0x80000) != 0)
-//     ratio = mulShift(ratio, "0x48a170391f7dc42444e8fa2");
-//   if (tick > 0) ratio = jsbi_1.default.divide(MaxUint256, ratio);
-//   //back to Q96
-//   const st = jsbi_1.default.greaterThan(
-//     jsbi_1.default.remainder(ratio, _32),
-//     ZERO,
-//   )
-//     ? jsbi_1.default.add(jsbi_1.default.divide(ratio, _32), ONE)
-//     : jsbi_1.default.divide(ratio, _32);
-
-//   console.log("ST d 96)", st.toString());
-
-//   const x = jsbi_1.default.BigInt(66);
-//   const xx = jsbi_1.default.exponentiate(jsbi_1.default.BigInt(2), x);
-//   const res = jsbi_1.default.divide(st, xx);
-
-//   return new types_1.Nat(res.toString());
 // }
