@@ -530,7 +530,7 @@ export function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat): Nat {
 
 export async function initTickAccumulators(
   cfmm: QuipuswapV3,
-  st: Storage,
+  st: quipuswapV3Types.Storage,
   tickIndex: quipuswapV3Types.TickIndex,
 ) {
   const curTickIndex = st.curTickIndex;

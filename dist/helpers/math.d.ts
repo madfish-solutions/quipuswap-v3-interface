@@ -266,10 +266,10 @@ export declare function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat
  *
  * Calculates the initial value of the accumulators tracked by a tick's state.
  */
-export declare function initTickAccumulators(cfmm: QuipuswapV3, st: Storage, tickIndex: quipuswapV3Types.TickIndex): Promise<{
+export declare function initTickAccumulators(cfmm: QuipuswapV3, st: quipuswapV3Types.Storage, tickIndex: quipuswapV3Types.TickIndex): Promise<{
     aSeconds: BigNumber;
     aTickCumulative: any;
-    aFeeGrowth: any;
+    aFeeGrowth: quipuswapV3Types.BalanceNatX128;
     aSecondsPerLiquidity: any;
 } | {
     aSeconds: number;
