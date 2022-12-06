@@ -207,7 +207,6 @@ function tickAccumulatorsInside(cfmm, st, lowerTi, upperTi) {
             }
         };
         const tickAccumulatorInside = (globalAcc, lowerTickAccOutside, upperTickAccOutside) => {
-            console.log(globalAcc, lowerTickAccOutside, upperTickAccOutside);
             return globalAcc
                 .minus(tickAccumulatorBelow(lowerTi, globalAcc, lowerTickAccOutside))
                 .minus(tickAccumulatorAbove(upperTi, globalAcc, upperTickAccOutside));

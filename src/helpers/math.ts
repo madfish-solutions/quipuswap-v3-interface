@@ -221,7 +221,6 @@ export async function tickAccumulatorsInside(
     lowerTickAccOutside: BigNumber,
     upperTickAccOutside: BigNumber,
   ) => {
-    console.log(globalAcc, lowerTickAccOutside, upperTickAccOutside);
     return globalAcc
       .minus(tickAccumulatorBelow(lowerTi, globalAcc, lowerTickAccOutside))
       .minus(tickAccumulatorAbove(upperTi, globalAcc, upperTickAccOutside));
