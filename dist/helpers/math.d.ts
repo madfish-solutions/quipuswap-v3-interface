@@ -262,31 +262,21 @@ Calculate the new `sqrt_price` after a deposit of `dy` `y` tokens.
 */
 export declare function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat): Nat;
 /**
+ * Equation 6.21
  *
--- | Equation 6.21
---
--- Calculates the initial value of the accumulators tracked by a tick's state.
-initTickAccumulators
-  :: MonadEmulated caps base m
-  => ContractHandler Parameter st -> Storage -> TickIndex
-  -> m Accumulators
-initTickAccumulators cfmm st tickIndex =
-  if sCurTickIndex st >= tickIndex
-    then do
-      secondsOutside <- getNow <&> timestampToSeconds
-      CumulativesValue tickCumulative secondsPerLiquidity <- observe cfmm
-      pure Accumulators
-        { aSeconds = secondsOutside
-        , aTickCumulative = tickCumulative
-        , aFeeGrowth = fmap (fromIntegral @Natural @Integer) <$> sFeeGrowth st
-        , aSecondsPerLiquidity = fromIntegral @Natural @Integer <$> secondsPerLiquidity
-        }
-    else do
-      -- pure (0, 0, PerToken 0 0, 0)
-      pure Accumulators
-        { aSeconds = 0
-        , aTickCumulative = 0
-        , aFeeGrowth = PerToken 0 0
-        , aSecondsPerLiquidity = 0
-        }
+ * Calculates the initial value of the accumulators tracked by a tick's state.
  */
+export declare function initTickAccumulators(cfmm: QuipuswapV3, st: Storage, tickIndex: quipuswapV3Types.TickIndex): Promise<{
+    aSeconds: BigNumber;
+    aTickCumulative: any;
+    aFeeGrowth: any;
+    aSecondsPerLiquidity: any;
+} | {
+    aSeconds: number;
+    aTickCumulative: number;
+    aFeeGrowth: {
+        x: number;
+        y: number;
+    };
+    aSecondsPerLiquidity: number;
+}>;

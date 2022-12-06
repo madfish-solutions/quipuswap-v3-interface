@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.calcNewPriceY = exports.calcNewPriceX = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
+exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
 const bignumber_js_1 = require("bignumber.js");
 const types_1 = require("./../types");
 exports.defaultLadder = {
@@ -437,45 +437,31 @@ function calcNewPriceY(sqrtPriceOld, liquidity, dy) {
 }
 exports.calcNewPriceY = calcNewPriceY;
 /**
+ * Equation 6.21
  *
--- | Equation 6.21
---
--- Calculates the initial value of the accumulators tracked by a tick's state.
-initTickAccumulators
-  :: MonadEmulated caps base m
-  => ContractHandler Parameter st -> Storage -> TickIndex
-  -> m Accumulators
-initTickAccumulators cfmm st tickIndex =
-  if sCurTickIndex st >= tickIndex
-    then do
-      secondsOutside <- getNow <&> timestampToSeconds
-      CumulativesValue tickCumulative secondsPerLiquidity <- observe cfmm
-      pure Accumulators
-        { aSeconds = secondsOutside
-        , aTickCumulative = tickCumulative
-        , aFeeGrowth = fmap (fromIntegral @Natural @Integer) <$> sFeeGrowth st
-        , aSecondsPerLiquidity = fromIntegral @Natural @Integer <$> secondsPerLiquidity
-        }
-    else do
-      -- pure (0, 0, PerToken 0 0, 0)
-      pure Accumulators
-        { aSeconds = 0
-        , aTickCumulative = 0
-        , aFeeGrowth = PerToken 0 0
-        , aSecondsPerLiquidity = 0
-        }
+ * Calculates the initial value of the accumulators tracked by a tick's state.
  */
-// export async function initTickAccumulators(
-//   cfmm: QuipuswapV3,
-//   st: Storage,
-//   tickIndex: quipuswapV3Types.TickIndex,
-// ): Promise<Accumulators> {
-//   const secondsOutside = await getNow().then(timestampToSeconds);
-//   const tickCumulative = await observe(cfmm);
-//   return {
-//     aSeconds: secondsOutside,
-//     aTickCumulative: tickCumulative,
-//     aFeeGrowth: st.feeGrowth,
-//     aSecondsPerLiquidity: 0,
-//   };
-// }
+function initTickAccumulators(cfmm, st, tickIndex) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const curTickIndex = st.curTickIndex;
+        if (curTickIndex >= tickIndex) {
+            const secondsOutside = new bignumber_js_1.BigNumber(Math.floor(Date.now() / 1000)).plus(1);
+            const { tick_cumulative: tickCumulative, seconds_per_liquidity_cumulative: secondsPerLiquidity, } = (yield cfmm.observe([secondsOutside.toString()]))[0];
+            return {
+                aSeconds: secondsOutside,
+                aTickCumulative: tickCumulative,
+                aFeeGrowth: st.feeGrowth,
+                aSecondsPerLiquidity: secondsPerLiquidity,
+            };
+        }
+        else {
+            return {
+                aSeconds: 0,
+                aTickCumulative: 0,
+                aFeeGrowth: { x: 0, y: 0 },
+                aSecondsPerLiquidity: 0,
+            };
+        }
+    });
+}
+exports.initTickAccumulators = initTickAccumulators;
