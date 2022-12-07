@@ -422,7 +422,7 @@ export function liquidityDeltaToTokensDelta(
           .toBignumber()
           .multipliedBy(_280)
           .multipliedBy(
-            sqrtPriceLower.toBignumber().minus(sqrtPriceUpper.toBignumber()),
+            sqrtPriceUpper.toBignumber().minus(sqrtPriceLower.toBignumber()),
           )
           .dividedBy(
             sqrtPriceLower

@@ -357,7 +357,7 @@ function liquidityDeltaToTokensDelta(liquidityDelta, lowerTickIndex, upperTickIn
             return new types_1.Int(liquidityDelta
                 .toBignumber()
                 .multipliedBy(_280)
-                .multipliedBy(sqrtPriceLower.toBignumber().minus(sqrtPriceUpper.toBignumber()))
+                .multipliedBy(sqrtPriceUpper.toBignumber().minus(sqrtPriceLower.toBignumber()))
                 .dividedBy(sqrtPriceLower
                 .toBignumber()
                 .multipliedBy(sqrtPriceUpper.toBignumber()))
