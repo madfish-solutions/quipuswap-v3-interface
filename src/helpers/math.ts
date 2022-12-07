@@ -1,5 +1,4 @@
 import { BigNumber } from "bignumber.js";
-import JSBI from "jsbi";
 
 import { QuipuswapV3 } from "./../index";
 
@@ -526,8 +525,17 @@ export function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat): Nat {
  * Equation 6.21
  *
  * Calculates the initial value of the accumulators tracked by a tick's state.
+ * if the current tick is not yet over
+ * @param {QuipuswapV3} cfmm - The contract instance
+ * @param st - quipuswapV3Types.Storage
+ * @param tickIndex - The tick index of the current tick.
+ * @returns an object with the following properties:
+ * - seconds: a Nat (natural number)
+ * - tickCumulative: an Int (integer)
+ * - feeGrowth: an object with two properties:
+ *   - x: a quipuswapV3Types.x128n (128-bit number)
+ *   - y: a quipuswapV
  */
-
 export async function initTickAccumulators(
   cfmm: QuipuswapV3,
   st: quipuswapV3Types.Storage,
@@ -542,17 +550,35 @@ export async function initTickAccumulators(
       seconds_per_liquidity_cumulative: secondsPerLiquidity,
     } = (await cfmm.observe([secondsOutside.toString()]))[0];
     return {
-      aSeconds: secondsOutside,
-      aTickCumulative: tickCumulative,
-      aFeeGrowth: st.feeGrowth,
-      aSecondsPerLiquidity: secondsPerLiquidity,
+      seconds: new Nat(secondsOutside),
+      tickCumulative: new Int(tickCumulative),
+      feeGrowth: st.feeGrowth,
+      secondsPerLiquidity: new quipuswapV3Types.x128n(secondsPerLiquidity),
     };
   } else {
     return {
-      aSeconds: 0,
-      aTickCumulative: 0,
-      aFeeGrowth: { x: 0, y: 0 },
-      aSecondsPerLiquidity: 0,
+      seconds: new Nat(0),
+      tickCumulative: new Int(0),
+      feeGrowth: {
+        x: new quipuswapV3Types.x128n(0),
+        y: new quipuswapV3Types.x128n(0),
+      },
+      secondsPerLiquidity: new quipuswapV3Types.x128n(0),
     };
   }
 }
+
+/**
+ * Calculate the swap fee paid when depositing @tokensDelta@ tokens.
+ * transaction amount and dividing by 10,000
+ * @param {BigNumber} feeBps - The fee in basis points.
+ * @param {BigNumber} tokensDelta - The amount of tokens that will be transferred.
+ * @returns The fee is being returned.
+ */
+export const calcSwapFee = (feeBps: BigNumber, tokensDelta: BigNumber) => {
+  const fee = tokensDelta
+    .multipliedBy(feeBps)
+    .dividedBy(10000)
+    .integerValue(BigNumber.ROUND_CEIL);
+  return fee;
+};

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
+exports.calcSwapFee = exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
 const bignumber_js_1 = require("bignumber.js");
 const types_1 = require("./../types");
 exports.defaultLadder = {
@@ -440,6 +440,16 @@ exports.calcNewPriceY = calcNewPriceY;
  * Equation 6.21
  *
  * Calculates the initial value of the accumulators tracked by a tick's state.
+ * if the current tick is not yet over
+ * @param {QuipuswapV3} cfmm - The contract instance
+ * @param st - quipuswapV3Types.Storage
+ * @param tickIndex - The tick index of the current tick.
+ * @returns an object with the following properties:
+ * - seconds: a Nat (natural number)
+ * - tickCumulative: an Int (integer)
+ * - feeGrowth: an object with two properties:
+ *   - x: a quipuswapV3Types.x128n (128-bit number)
+ *   - y: a quipuswapV
  */
 function initTickAccumulators(cfmm, st, tickIndex) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -448,20 +458,38 @@ function initTickAccumulators(cfmm, st, tickIndex) {
             const secondsOutside = new bignumber_js_1.BigNumber(Math.floor(Date.now() / 1000)).plus(1);
             const { tick_cumulative: tickCumulative, seconds_per_liquidity_cumulative: secondsPerLiquidity, } = (yield cfmm.observe([secondsOutside.toString()]))[0];
             return {
-                aSeconds: secondsOutside,
-                aTickCumulative: tickCumulative,
-                aFeeGrowth: st.feeGrowth,
-                aSecondsPerLiquidity: secondsPerLiquidity,
+                seconds: new types_1.Nat(secondsOutside),
+                tickCumulative: new types_1.Int(tickCumulative),
+                feeGrowth: st.feeGrowth,
+                secondsPerLiquidity: new types_1.quipuswapV3Types.x128n(secondsPerLiquidity),
             };
         }
         else {
             return {
-                aSeconds: 0,
-                aTickCumulative: 0,
-                aFeeGrowth: { x: 0, y: 0 },
-                aSecondsPerLiquidity: 0,
+                seconds: new types_1.Nat(0),
+                tickCumulative: new types_1.Int(0),
+                feeGrowth: {
+                    x: new types_1.quipuswapV3Types.x128n(0),
+                    y: new types_1.quipuswapV3Types.x128n(0),
+                },
+                secondsPerLiquidity: new types_1.quipuswapV3Types.x128n(0),
             };
         }
     });
 }
 exports.initTickAccumulators = initTickAccumulators;
+/**
+ * Calculate the swap fee paid when depositing @tokensDelta@ tokens.
+ * transaction amount and dividing by 10,000
+ * @param {BigNumber} feeBps - The fee in basis points.
+ * @param {BigNumber} tokensDelta - The amount of tokens that will be transferred.
+ * @returns The fee is being returned.
+ */
+const calcSwapFee = (feeBps, tokensDelta) => {
+    const fee = tokensDelta
+        .multipliedBy(feeBps)
+        .dividedBy(10000)
+        .integerValue(bignumber_js_1.BigNumber.ROUND_CEIL);
+    return fee;
+};
+exports.calcSwapFee = calcSwapFee;

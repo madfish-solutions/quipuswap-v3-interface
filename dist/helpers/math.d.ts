@@ -265,18 +265,28 @@ export declare function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat
  * Equation 6.21
  *
  * Calculates the initial value of the accumulators tracked by a tick's state.
+ * if the current tick is not yet over
+ * @param {QuipuswapV3} cfmm - The contract instance
+ * @param st - quipuswapV3Types.Storage
+ * @param tickIndex - The tick index of the current tick.
+ * @returns an object with the following properties:
+ * - seconds: a Nat (natural number)
+ * - tickCumulative: an Int (integer)
+ * - feeGrowth: an object with two properties:
+ *   - x: a quipuswapV3Types.x128n (128-bit number)
+ *   - y: a quipuswapV
  */
 export declare function initTickAccumulators(cfmm: QuipuswapV3, st: quipuswapV3Types.Storage, tickIndex: quipuswapV3Types.TickIndex): Promise<{
-    aSeconds: BigNumber;
-    aTickCumulative: any;
-    aFeeGrowth: quipuswapV3Types.BalanceNatX128;
-    aSecondsPerLiquidity: any;
-} | {
-    aSeconds: number;
-    aTickCumulative: number;
-    aFeeGrowth: {
-        x: number;
-        y: number;
-    };
-    aSecondsPerLiquidity: number;
+    seconds: Nat;
+    tickCumulative: Int;
+    feeGrowth: quipuswapV3Types.BalanceNatX128;
+    secondsPerLiquidity: quipuswapV3Types.x128n;
 }>;
+/**
+ * Calculate the swap fee paid when depositing @tokensDelta@ tokens.
+ * transaction amount and dividing by 10,000
+ * @param {BigNumber} feeBps - The fee in basis points.
+ * @param {BigNumber} tokensDelta - The amount of tokens that will be transferred.
+ * @returns The fee is being returned.
+ */
+export declare const calcSwapFee: (feeBps: BigNumber, tokensDelta: BigNumber) => BigNumber;
