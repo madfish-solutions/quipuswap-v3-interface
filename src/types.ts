@@ -395,7 +395,7 @@ export namespace quipuswapV3Types {
     blockStartLiquidityValue: Nat;
   };
   export type TimedCumulative = {
-    time: string;
+    time: BigNumber;
     tick: TickCumulative;
     spl: SplCumulative;
   };
@@ -473,7 +473,7 @@ export namespace quipuswapV3Types {
       timedCumulatives.forEach((value, key) => {
         if (value !== undefined) {
           newCumulativesMap[key] = {
-            time: value.time,
+            time: new BigNumber(Date.parse(value.time) / 1000),
             tick: {
               sum: new Int(value.tick.sum),
               blockStartValue: value.tick.block_start_value,
@@ -506,7 +506,7 @@ export namespace quipuswapV3Types {
         });
 
         newCumulativesMap[i] = {
-          time: "0",
+          time: new BigNumber(0),
           tick: {
             sum: new Int("0"),
             blockStartValue: new Int("0"),
@@ -530,7 +530,7 @@ export namespace quipuswapV3Types {
     async getActual(key: Nat): Promise<TimedCumulative> {
       const ts: any = await this.michelsonMap.get(key.toString());
       return {
-        time: ts.time,
+        time: new BigNumber(Date.parse(ts.time) / 1000),
         tick: {
           sum: new Int(ts.tick.sum),
           blockStartValue: new Int(ts.tick.block_start_value),
@@ -551,7 +551,7 @@ export namespace quipuswapV3Types {
       timedCumulative.forEach((value, key) => {
         if (value !== undefined) {
           this.map[key] = {
-            time: value.time,
+            time: new BigNumber(Date.parse(value.time) / 1000),
             tick: {
               sum: new Int(value.tick.sum),
               blockStartValue: new Int(value.tick.block_start_value),

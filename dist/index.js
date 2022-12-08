@@ -102,8 +102,8 @@ class QuipuswapV3Methods {
         return trParams;
     }
     static increaseObservationCount(contract, amount) {
-        const transferParams = contract.methodsObject
-            .increase_observation_count({ added_observation_count: amount.toFixed() })
+        const transferParams = contract.methods
+            .increase_observation_count(amount.toFixed())
             .toTransferParams();
         return transferParams;
     }

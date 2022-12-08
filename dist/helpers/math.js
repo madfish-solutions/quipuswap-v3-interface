@@ -461,16 +461,33 @@ exports.calcNewPriceY = calcNewPriceY;
 function initTickAccumulators(cfmm, st, tickIndex) {
     return __awaiter(this, void 0, void 0, function* () {
         const curTickIndex = st.curTickIndex;
+        console.log("curTickIndex", curTickIndex);
+        console.log("tickIndex", tickIndex);
         if (curTickIndex >= tickIndex) {
-            const blockInfo = yield cfmm.tezos.rpc.getBlockHeader();
-            const now = new bignumber_js_1.BigNumber(Math.floor(Date.parse(blockInfo.timestamp) / 1000)).plus(1);
-            const { time: secondsOutside, tickCumulative, secondsPerLiquidity, } = yield (0, utils_1.safeObserve)(cfmm, now);
+            //const blockInfo = await cfmm.tezos.rpc.getBlockHeader();
+            // const now = new BigNumber(
+            //   Math.floor(Date.parse(blockInfo.timestamp) / 1000),
+            // ).plus(1);
+            console.log(st.cumulativesBuffer.last.toNumber());
+            const lastBuffer = st.cumulativesBuffer.map.map[st.cumulativesBuffer.last.toNumber()];
+            const lastBufferSeconds = lastBuffer.time;
+            console.log("LastBufferSeconds", lastBuffer.time);
+            console.log("FirstBufferSeconds", st.cumulativesBuffer.map.map[st.cumulativesBuffer.first.toNumber()].time);
+            // const {
+            //   time: secondsOutside,
+            //   tickCumulative,
+            //   secondsPerLiquidity,
+            // } = await safeObserve(
+            //   cfmm,
+            //   new BigNumber(Math.floor(Date.parse(lastBuffer) / 1000)),
+            // );
+            const { tick_cumulative: tickCumulative, seconds_per_liquidity_cumulative: secondsPerLiquidity, } = (yield cfmm.observe([lastBufferSeconds.toString()]))[0];
             // const {
             //   tick_cumulative: tickCumulative,
             //   seconds_per_liquidity_cumulative: secondsPerLiquidity,
             // } = (await cfmm.observe([secondsOutside.toString()]))[0];
             return {
-                seconds: new types_1.Nat(secondsOutside),
+                seconds: new types_1.Nat(lastBufferSeconds),
                 tickCumulative: new types_1.Int(tickCumulative),
                 feeGrowth: st.feeGrowth,
                 secondsPerLiquidity: new types_1.quipuswapV3Types.x128n(secondsPerLiquidity),

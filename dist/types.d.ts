@@ -189,7 +189,7 @@ export declare namespace quipuswapV3Types {
         blockStartLiquidityValue: Nat;
     };
     type TimedCumulative = {
-        time: string;
+        time: BigNumber;
         tick: TickCumulative;
         spl: SplCumulative;
     };

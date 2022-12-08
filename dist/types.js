@@ -175,7 +175,7 @@ var quipuswapV3Types;
                 timedCumulatives.forEach((value, key) => {
                     if (value !== undefined) {
                         newCumulativesMap[key] = {
-                            time: value.time,
+                            time: new bignumber_js_1.BigNumber(Date.parse(value.time) / 1000),
                             tick: {
                                 sum: new Int(value.tick.sum),
                                 blockStartValue: value.tick.block_start_value,
@@ -208,7 +208,7 @@ var quipuswapV3Types;
                     },
                 });
                 newCumulativesMap[i] = {
-                    time: "0",
+                    time: new bignumber_js_1.BigNumber(0),
                     tick: {
                         sum: new Int("0"),
                         blockStartValue: new Int("0"),
@@ -228,7 +228,7 @@ var quipuswapV3Types;
             return __awaiter(this, void 0, void 0, function* () {
                 const ts = yield this.michelsonMap.get(key.toString());
                 return {
-                    time: ts.time,
+                    time: new bignumber_js_1.BigNumber(Date.parse(ts.time) / 1000),
                     tick: {
                         sum: new Int(ts.tick.sum),
                         blockStartValue: new Int(ts.tick.block_start_value),
@@ -248,7 +248,7 @@ var quipuswapV3Types;
                 timedCumulative.forEach((value, key) => {
                     if (value !== undefined) {
                         this.map[key] = {
-                            time: value.time,
+                            time: new bignumber_js_1.BigNumber(Date.parse(value.time) / 1000),
                             tick: {
                                 sum: new Int(value.tick.sum),
                                 blockStartValue: new Int(value.tick.block_start_value),

@@ -161,8 +161,8 @@ export class QuipuswapV3Methods {
     contract: Contract,
     amount: Nat,
   ): TransferParams {
-    const transferParams = contract.methodsObject
-      .increase_observation_count({ added_observation_count: amount.toFixed() })
+    const transferParams = contract.methods
+      .increase_observation_count(amount.toFixed())
       .toTransferParams();
 
     return transferParams;

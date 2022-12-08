@@ -180,7 +180,6 @@ export const safeObserve = async (pool: QuipuswapV3, time: BigNumber) => {
       secondsPerLiquidity: secondsPerLiquidity,
     };
   } catch (e) {
-    console.log(e);
     const block = await pool.tezos.rpc.getBlockHeader();
     const ts = new BigNumber(Date.parse(block.timestamp) / 1000)
       .plus(1)
