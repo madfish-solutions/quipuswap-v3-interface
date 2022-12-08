@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.calcSwapFee = exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
 const bignumber_js_1 = require("bignumber.js");
+const utils_1 = require("../utils");
 const types_1 = require("./../types");
 exports.defaultLadder = {
     "0,true": {
@@ -188,8 +189,14 @@ function tickAccumulatorsInside(cfmm, st, lowerTi, upperTi) {
     return __awaiter(this, void 0, void 0, function* () {
         const lowerTs = st.ticks.get(lowerTi);
         const upperTs = st.ticks.get(upperTi);
-        const currentTime = new bignumber_js_1.BigNumber(Math.floor(Date.now() / 1000)).plus(1);
-        const { tick_cumulative: cvTickCumulative, seconds_per_liquidity_cumulative: cvSecondsPerLiquidityCumulative, } = (yield cfmm.observe([currentTime.toString()]))[0];
+        //const currentTime = new BigNumber(Math.floor(Date.now() / 1000)).plus(1);
+        // const {
+        //   tick_cumulative: cvTickCumulative,
+        //   seconds_per_liquidity_cumulative: cvSecondsPerLiquidityCumulative,
+        // } = (await cfmm.observe([currentTime.toString()]))[0];
+        const blockInfo = yield cfmm.tezos.rpc.getBlockHeader();
+        const now = new bignumber_js_1.BigNumber(Math.floor(Date.parse(blockInfo.timestamp) / 1000)).plus(1);
+        const { time: currentTime, tickCumulative: cvTickCumulative, secondsPerLiquidity: cvSecondsPerLiquidityCumulative, } = yield (0, utils_1.safeObserve)(cfmm, now);
         const tickAccumulatorAbove = (tickIndex, globalAcc, tickAccOutside) => {
             if (st.curTickIndex.gte(tickIndex)) {
                 return globalAcc.minus(tickAccOutside);
@@ -455,8 +462,13 @@ function initTickAccumulators(cfmm, st, tickIndex) {
     return __awaiter(this, void 0, void 0, function* () {
         const curTickIndex = st.curTickIndex;
         if (curTickIndex >= tickIndex) {
-            const secondsOutside = new bignumber_js_1.BigNumber(Math.floor(Date.now() / 1000)).plus(1);
-            const { tick_cumulative: tickCumulative, seconds_per_liquidity_cumulative: secondsPerLiquidity, } = (yield cfmm.observe([secondsOutside.toString()]))[0];
+            const blockInfo = yield cfmm.tezos.rpc.getBlockHeader();
+            const now = new bignumber_js_1.BigNumber(Math.floor(Date.parse(blockInfo.timestamp) / 1000)).plus(1);
+            const { time: secondsOutside, tickCumulative, secondsPerLiquidity, } = yield (0, utils_1.safeObserve)(cfmm, now);
+            // const {
+            //   tick_cumulative: tickCumulative,
+            //   seconds_per_liquidity_cumulative: secondsPerLiquidity,
+            // } = (await cfmm.observe([secondsOutside.toString()]))[0];
             return {
                 seconds: new types_1.Nat(secondsOutside),
                 tickCumulative: new types_1.Int(tickCumulative),

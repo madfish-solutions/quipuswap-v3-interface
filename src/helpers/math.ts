@@ -1,4 +1,5 @@
 import { BigNumber } from "bignumber.js";
+import { safeObserve } from "../utils";
 
 import { QuipuswapV3 } from "./../index";
 
@@ -185,11 +186,21 @@ export async function tickAccumulatorsInside(
   const lowerTs = st.ticks.get(lowerTi);
   const upperTs = st.ticks.get(upperTi);
 
-  const currentTime = new BigNumber(Math.floor(Date.now() / 1000)).plus(1);
+  //const currentTime = new BigNumber(Math.floor(Date.now() / 1000)).plus(1);
+  // const {
+  //   tick_cumulative: cvTickCumulative,
+  //   seconds_per_liquidity_cumulative: cvSecondsPerLiquidityCumulative,
+  // } = (await cfmm.observe([currentTime.toString()]))[0];
+  const blockInfo = await cfmm.tezos.rpc.getBlockHeader();
+
+  const now = new BigNumber(
+    Math.floor(Date.parse(blockInfo.timestamp) / 1000),
+  ).plus(1);
   const {
-    tick_cumulative: cvTickCumulative,
-    seconds_per_liquidity_cumulative: cvSecondsPerLiquidityCumulative,
-  } = (await cfmm.observe([currentTime.toString()]))[0];
+    time: currentTime,
+    tickCumulative: cvTickCumulative,
+    secondsPerLiquidity: cvSecondsPerLiquidityCumulative,
+  } = await safeObserve(cfmm, now);
 
   const tickAccumulatorAbove = (
     tickIndex: Int,
@@ -543,12 +554,20 @@ export async function initTickAccumulators(
 ) {
   const curTickIndex = st.curTickIndex;
   if (curTickIndex >= tickIndex) {
-    const secondsOutside = new BigNumber(Math.floor(Date.now() / 1000)).plus(1);
+    const blockInfo = await cfmm.tezos.rpc.getBlockHeader();
 
+    const now = new BigNumber(
+      Math.floor(Date.parse(blockInfo.timestamp) / 1000),
+    ).plus(1);
     const {
-      tick_cumulative: tickCumulative,
-      seconds_per_liquidity_cumulative: secondsPerLiquidity,
-    } = (await cfmm.observe([secondsOutside.toString()]))[0];
+      time: secondsOutside,
+      tickCumulative,
+      secondsPerLiquidity,
+    } = await safeObserve(cfmm, now);
+    // const {
+    //   tick_cumulative: tickCumulative,
+    //   seconds_per_liquidity_cumulative: secondsPerLiquidity,
+    // } = (await cfmm.observe([secondsOutside.toString()]))[0];
     return {
       seconds: new Nat(secondsOutside),
       tickCumulative: new Int(tickCumulative),

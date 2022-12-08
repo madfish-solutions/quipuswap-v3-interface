@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Nat, quipuswapV3Types, tezosTypes } from "./types";
 import { TezosToolkit, TransferParams } from "@taquito/taquito";
+import { QuipuswapV3 } from ".";
 /**
  * @category Utils
  */
@@ -49,4 +50,5 @@ export declare function isMonotonic<T>(l: T[]): boolean;
  * -- All records.
  */
 export declare function entries(storage: quipuswapV3Types.Storage): quipuswapV3Types.TimedCumulative[];
+export declare const safeObserve: (pool: QuipuswapV3, time: BigNumber) => any;
 export {};

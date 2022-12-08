@@ -7,6 +7,7 @@ import {
   tezosTypes,
 } from "./types";
 import { TezosToolkit, TransferParams } from "@taquito/taquito";
+import { QuipuswapV3 } from ".";
 const { validateAddress } = require("@taquito/utils");
 
 /**
@@ -166,3 +167,24 @@ export function entries(
     )
     .map(([_, v]) => v);
 }
+
+export const safeObserve = async (pool: QuipuswapV3, time: BigNumber) => {
+  try {
+    const {
+      tick_cumulative: tickCumulative,
+      seconds_per_liquidity_cumulative: secondsPerLiquidity,
+    } = (await pool.observe([time.toString()]))[0];
+    return {
+      time: time,
+      tickCumulative: tickCumulative,
+      secondsPerLiquidity: secondsPerLiquidity,
+    };
+  } catch (e) {
+    console.log(e);
+    const block = await pool.tezos.rpc.getBlockHeader();
+    const ts = new BigNumber(Date.parse(block.timestamp) / 1000)
+      .plus(1)
+      .integerValue(BigNumber.ROUND_FLOOR);
+    return safeObserve(pool, ts);
+  }
+};

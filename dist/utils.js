@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.entries = exports.isMonotonic = exports.actualLength = exports.isInRangeNat = exports.isInRange = exports.initTimedCumulativesBuffer = exports.initTimedCumulatives = exports.sendBatch = exports.batchify = exports.Timestamp = exports.Address = void 0;
+exports.safeObserve = exports.entries = exports.isMonotonic = exports.actualLength = exports.isInRangeNat = exports.isInRange = exports.initTimedCumulativesBuffer = exports.initTimedCumulatives = exports.sendBatch = exports.batchify = exports.Timestamp = exports.Address = void 0;
 const bignumber_js_1 = __importDefault(require("bignumber.js"));
 const types_1 = require("./types");
 const { validateAddress } = require("@taquito/utils");
@@ -144,3 +144,22 @@ function entries(storage) {
         .map(([_, v]) => v);
 }
 exports.entries = entries;
+const safeObserve = (pool, time) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { tick_cumulative: tickCumulative, seconds_per_liquidity_cumulative: secondsPerLiquidity, } = (yield pool.observe([time.toString()]))[0];
+        return {
+            time: time,
+            tickCumulative: tickCumulative,
+            secondsPerLiquidity: secondsPerLiquidity,
+        };
+    }
+    catch (e) {
+        console.log(e);
+        const block = yield pool.tezos.rpc.getBlockHeader();
+        const ts = new bignumber_js_1.default(Date.parse(block.timestamp) / 1000)
+            .plus(1)
+            .integerValue(bignumber_js_1.default.ROUND_FLOOR);
+        return (0, exports.safeObserve)(pool, ts);
+    }
+});
+exports.safeObserve = safeObserve;
