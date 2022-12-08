@@ -97,7 +97,7 @@ export declare class QuipuswapV3 {
      * @returns TransferParam | WalletOperationBatch
      */
     updateOperators(params: fa2Types.UpdateOperators[]): Promise<QsReturn>;
-    inreaseObservationCount(count: BigNumber): Promise<TransferParams>;
+    increaseObservationCount(count: BigNumber): Promise<TransferParams>;
     /** Get Oracle values at certain given range. Reimplemented from Haskell Code below this line.
      * observe cfmm = do
     currentTime <- getNow

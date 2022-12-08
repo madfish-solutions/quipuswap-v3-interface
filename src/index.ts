@@ -507,7 +507,7 @@ export class QuipuswapV3 {
   }
 
   @extendCallQS
-  async inreaseObservationCount(count: BigNumber) {
+  async increaseObservationCount(count: BigNumber) {
     return {
       callParams: [new Nat(count)],
       callback: QuipuswapV3Methods.increaseObservationCount,

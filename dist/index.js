@@ -381,7 +381,7 @@ class QuipuswapV3 {
             };
         });
     }
-    inreaseObservationCount(count) {
+    increaseObservationCount(count) {
         return __awaiter(this, void 0, void 0, function* () {
             return {
                 callParams: [new types_1.Nat(count)],
@@ -432,5 +432,5 @@ __decorate([
 ], QuipuswapV3.prototype, "updateOperators", null);
 __decorate([
     decorators_1.extendCallQS
-], QuipuswapV3.prototype, "inreaseObservationCount", null);
+], QuipuswapV3.prototype, "increaseObservationCount", null);
 exports.QuipuswapV3 = QuipuswapV3;

@@ -553,42 +553,14 @@ export async function initTickAccumulators(
   tickIndex: quipuswapV3Types.TickIndex,
 ) {
   const curTickIndex = st.curTickIndex;
-  console.log("curTickIndex", curTickIndex);
-  console.log("tickIndex", tickIndex);
   if (curTickIndex >= tickIndex) {
-    //const blockInfo = await cfmm.tezos.rpc.getBlockHeader();
-
-    // const now = new BigNumber(
-    //   Math.floor(Date.parse(blockInfo.timestamp) / 1000),
-    // ).plus(1);
-    console.log(st.cumulativesBuffer.last.toNumber());
     const lastBuffer =
       st.cumulativesBuffer.map.map[st.cumulativesBuffer.last.toNumber()];
     const lastBufferSeconds = lastBuffer.time;
-
-    console.log("LastBufferSeconds", lastBuffer.time);
-    console.log(
-      "FirstBufferSeconds",
-      st.cumulativesBuffer.map.map[st.cumulativesBuffer.first.toNumber()].time,
-    );
-
-    // const {
-    //   time: secondsOutside,
-    //   tickCumulative,
-    //   secondsPerLiquidity,
-    // } = await safeObserve(
-    //   cfmm,
-    //   new BigNumber(Math.floor(Date.parse(lastBuffer) / 1000)),
-    // );
     const {
       tick_cumulative: tickCumulative,
       seconds_per_liquidity_cumulative: secondsPerLiquidity,
     } = (await cfmm.observe([lastBufferSeconds.toString()]))[0];
-
-    // const {
-    //   tick_cumulative: tickCumulative,
-    //   seconds_per_liquidity_cumulative: secondsPerLiquidity,
-    // } = (await cfmm.observe([secondsOutside.toString()]))[0];
     return {
       seconds: new Nat(lastBufferSeconds),
       tickCumulative: new Int(tickCumulative),
