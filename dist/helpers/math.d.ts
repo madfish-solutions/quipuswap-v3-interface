@@ -218,6 +218,29 @@ export declare function liquidityDeltaToTokensDelta(liquidityDelta: Int, lowerTi
     y: Int;
 };
 /**
+ * Subtract the protocol fee from an amount of @Y@ tokens.
+ * Note that this rounds down, as we always want to risk giving the user a bit
+ * less rather than giving more than we have.
+ */
+export declare const removeProtocolFee: (dy: BigNumber, protoFeeBps: BigNumber) => BigNumber;
+/**
+ * Calculate how many Y tokens should be given to the user after depositing X tokens.
+ * Equation 6.14
+ *   Δy = Δ√P * L
+ *   Δy = (√P_new - √P_old) * L
+ * Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
+ *   dy = (sqrtPriceNew / 2^80 - sqrtPriceOld / 2^80) * L
+
+ * Keep in mind that the protocol fee is subtracted after the conversion, so the
+ * received @Y@s can be calculated from the same price difference.
+ * @param {quipuswapV3Types.x80n} sqrtPriceOld - the square root of the price of the token pair before the swap
+ * @param {quipuswapV3Types.x80n} sqrtPriceNew - the new sqrtPrice
+ * @param {Nat} liquidity - The amount of liquidity that the user has in the pool.
+ * @param {Nat} protoFeeBps - The protocol fee in basis points.
+ * @returns The amount of Y tokens that will be received by the user.
+ */
+export declare function calcReceivedY(sqrtPriceOld: quipuswapV3Types.x80n, sqrtPriceNew: quipuswapV3Types.x80n, liquidity: Nat, protoFeeBps: Nat): Int;
+/**
  *  Calculate the new price after depositing @dx@ tokens **while swapping within a single tick**.
 
 Equation 6.15
@@ -235,8 +258,9 @@ Equation 6.15
   Dividing both sides by (dx / liquidity + 2^80 / sqrt_price_old):
     2^80 / (dx / liquidity + 2^80 / sqrt_price_old) = sqrt_price_new
  -}
+
  */
-export declare function calcNewPriceX(sqrtPriceOld: Nat, liquidity: Nat, dx: Nat): Nat;
+export declare function calcNewPriceX(sqrtPriceOld: quipuswapV3Types.x80n, liquidity: Nat, dx: Nat): quipuswapV3Types.x80n;
 /**
 Calculate the new `sqrt_price` after a deposit of `dy` `y` tokens.
     Derived from equation 6.13:

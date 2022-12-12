@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.calcSwapFee = exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
+exports.calcSwapFee = exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.calcReceivedY = exports.removeProtocolFee = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
 const bignumber_js_1 = require("bignumber.js");
 const utils_1 = require("../utils");
 const types_1 = require("./../types");
@@ -387,6 +387,48 @@ function liquidityDeltaToTokensDelta(liquidityDelta, lowerTickIndex, upperTickIn
 }
 exports.liquidityDeltaToTokensDelta = liquidityDeltaToTokensDelta;
 /**
+ * Subtract the protocol fee from an amount of @Y@ tokens.
+ * Note that this rounds down, as we always want to risk giving the user a bit
+ * less rather than giving more than we have.
+ */
+const removeProtocolFee = (dy, protoFeeBps) => {
+    return dy
+        .multipliedBy(new bignumber_js_1.BigNumber(10000).minus(protoFeeBps))
+        .dividedBy(new bignumber_js_1.BigNumber(10000))
+        .integerValue(bignumber_js_1.BigNumber.ROUND_DOWN);
+};
+exports.removeProtocolFee = removeProtocolFee;
+/**
+ * Calculate how many Y tokens should be given to the user after depositing X tokens.
+ * Equation 6.14
+ *   Δy = Δ√P * L
+ *   Δy = (√P_new - √P_old) * L
+ * Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
+ *   dy = (sqrtPriceNew / 2^80 - sqrtPriceOld / 2^80) * L
+
+ * Keep in mind that the protocol fee is subtracted after the conversion, so the
+ * received @Y@s can be calculated from the same price difference.
+ * @param {quipuswapV3Types.x80n} sqrtPriceOld - the square root of the price of the token pair before the swap
+ * @param {quipuswapV3Types.x80n} sqrtPriceNew - the new sqrtPrice
+ * @param {Nat} liquidity - The amount of liquidity that the user has in the pool.
+ * @param {Nat} protoFeeBps - The protocol fee in basis points.
+ * @returns The amount of Y tokens that will be received by the user.
+ */
+function calcReceivedY(sqrtPriceOld, sqrtPriceNew, liquidity, protoFeeBps) {
+    const _280 = new bignumber_js_1.BigNumber(2).pow(80);
+    const dy = new bignumber_js_1.BigNumber(sqrtPriceNew.toBignumber())
+        .dividedBy(_280)
+        .minus(new bignumber_js_1.BigNumber(sqrtPriceOld.toBignumber()).dividedBy(_280))
+        .multipliedBy(liquidity.toBignumber())
+        .toNumber();
+    const dyOut = Math.floor(-dy);
+    // return new Int(
+    //   removeProtocolFee(new BigNumber(dyOut), protoFeeBps.toBignumber()),
+    // );
+    return new types_1.Int(dyOut);
+}
+exports.calcReceivedY = calcReceivedY;
+/**
  *  Calculate the new price after depositing @dx@ tokens **while swapping within a single tick**.
 
 Equation 6.15
@@ -404,11 +446,12 @@ Equation 6.15
   Dividing both sides by (dx / liquidity + 2^80 / sqrt_price_old):
     2^80 / (dx / liquidity + 2^80 / sqrt_price_old) = sqrt_price_new
  -}
+
  */
 function calcNewPriceX(sqrtPriceOld, liquidity, dx) {
-    const shiftedL80 = shiftLeft(liquidity.multipliedBy(sqrtPriceOld), new bignumber_js_1.BigNumber(80));
-    const shiftedL80PlusDxSqrtPriceOld = shiftLeft(liquidity, new bignumber_js_1.BigNumber(80)).plus(dx.multipliedBy(sqrtPriceOld));
-    return new types_1.Nat(shiftedL80
+    const shiftedL80 = shiftLeft(liquidity.toBignumber().multipliedBy(sqrtPriceOld), new bignumber_js_1.BigNumber(80));
+    const shiftedL80PlusDxSqrtPriceOld = shiftLeft(liquidity.toBignumber(), new bignumber_js_1.BigNumber(80)).plus(dx.multipliedBy(sqrtPriceOld));
+    return new types_1.quipuswapV3Types.x80n(shiftedL80
         .dividedBy(shiftedL80PlusDxSqrtPriceOld)
         .integerValue(bignumber_js_1.BigNumber.ROUND_FLOOR));
 }

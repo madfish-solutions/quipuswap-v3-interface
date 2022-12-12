@@ -464,7 +464,52 @@ export function liquidityDeltaToTokensDelta(
   })();
   return { x: deltaX, y: deltaY };
 }
+/**
+ * Subtract the protocol fee from an amount of @Y@ tokens.
+ * Note that this rounds down, as we always want to risk giving the user a bit
+ * less rather than giving more than we have.
+ */
+export const removeProtocolFee = (dy: BigNumber, protoFeeBps: BigNumber) => {
+  return dy
+    .multipliedBy(new BigNumber(10_000).minus(protoFeeBps))
+    .dividedBy(new BigNumber(10_000))
+    .integerValue(BigNumber.ROUND_DOWN);
+};
 
+/**
+ * Calculate how many Y tokens should be given to the user after depositing X tokens.
+ * Equation 6.14
+ *   Δy = Δ√P * L
+ *   Δy = (√P_new - √P_old) * L
+ * Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
+ *   dy = (sqrtPriceNew / 2^80 - sqrtPriceOld / 2^80) * L
+
+ * Keep in mind that the protocol fee is subtracted after the conversion, so the
+ * received @Y@s can be calculated from the same price difference.
+ * @param {quipuswapV3Types.x80n} sqrtPriceOld - the square root of the price of the token pair before the swap
+ * @param {quipuswapV3Types.x80n} sqrtPriceNew - the new sqrtPrice
+ * @param {Nat} liquidity - The amount of liquidity that the user has in the pool.
+ * @param {Nat} protoFeeBps - The protocol fee in basis points.
+ * @returns The amount of Y tokens that will be received by the user.
+ */
+export function calcReceivedY(
+  sqrtPriceOld: quipuswapV3Types.x80n,
+  sqrtPriceNew: quipuswapV3Types.x80n,
+  liquidity: Nat,
+  protoFeeBps: Nat,
+): Int {
+  const _280 = new BigNumber(2).pow(80);
+  const dy = new BigNumber(sqrtPriceNew.toBignumber())
+    .dividedBy(_280)
+    .minus(new BigNumber(sqrtPriceOld.toBignumber()).dividedBy(_280))
+    .multipliedBy(liquidity.toBignumber())
+    .toNumber();
+  const dyOut = Math.floor(-dy);
+  // return new Int(
+  //   removeProtocolFee(new BigNumber(dyOut), protoFeeBps.toBignumber()),
+  // );
+  return new Int(dyOut);
+}
 /**
  *  Calculate the new price after depositing @dx@ tokens **while swapping within a single tick**.
 
@@ -483,17 +528,22 @@ Equation 6.15
   Dividing both sides by (dx / liquidity + 2^80 / sqrt_price_old):
     2^80 / (dx / liquidity + 2^80 / sqrt_price_old) = sqrt_price_new
  -}
+
  */
-export function calcNewPriceX(sqrtPriceOld: Nat, liquidity: Nat, dx: Nat): Nat {
+export function calcNewPriceX(
+  sqrtPriceOld: quipuswapV3Types.x80n,
+  liquidity: Nat,
+  dx: Nat,
+): quipuswapV3Types.x80n {
   const shiftedL80 = shiftLeft(
-    liquidity.multipliedBy(sqrtPriceOld),
+    liquidity.toBignumber().multipliedBy(sqrtPriceOld),
     new BigNumber(80),
   );
   const shiftedL80PlusDxSqrtPriceOld = shiftLeft(
-    liquidity,
+    liquidity.toBignumber(),
     new BigNumber(80),
   ).plus(dx.multipliedBy(sqrtPriceOld));
-  return new Nat(
+  return new quipuswapV3Types.x80n(
     shiftedL80
       .dividedBy(shiftedL80PlusDxSqrtPriceOld)
       .integerValue(BigNumber.ROUND_FLOOR),
