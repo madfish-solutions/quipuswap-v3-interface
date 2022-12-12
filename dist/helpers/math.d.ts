@@ -239,7 +239,7 @@ export declare const removeProtocolFee: (dy: BigNumber, protoFeeBps: BigNumber) 
  * @param {Nat} protoFeeBps - The protocol fee in basis points.
  * @returns The amount of Y tokens that will be received by the user.
  */
-export declare function calcReceivedY(sqrtPriceOld: quipuswapV3Types.x80n, sqrtPriceNew: quipuswapV3Types.x80n, liquidity: Nat, protoFeeBps: Nat): Int;
+export declare function calcReceivedY(sqrtPriceOld: quipuswapV3Types.x80n, sqrtPriceNew: quipuswapV3Types.x80n, liquidity: Nat): Int;
 /**
  *  Calculate the new price after depositing @dx@ tokens **while swapping within a single tick**.
 

@@ -496,7 +496,6 @@ export function calcReceivedY(
   sqrtPriceOld: quipuswapV3Types.x80n,
   sqrtPriceNew: quipuswapV3Types.x80n,
   liquidity: Nat,
-  protoFeeBps: Nat,
 ): Int {
   const _280 = new BigNumber(2).pow(80);
   const dy = new BigNumber(sqrtPriceNew.toBignumber())
@@ -505,9 +504,6 @@ export function calcReceivedY(
     .multipliedBy(liquidity.toBignumber())
     .toNumber();
   const dyOut = Math.floor(-dy);
-  // return new Int(
-  //   removeProtocolFee(new BigNumber(dyOut), protoFeeBps.toBignumber()),
-  // );
   return new Int(dyOut);
 }
 /**

@@ -414,7 +414,7 @@ exports.removeProtocolFee = removeProtocolFee;
  * @param {Nat} protoFeeBps - The protocol fee in basis points.
  * @returns The amount of Y tokens that will be received by the user.
  */
-function calcReceivedY(sqrtPriceOld, sqrtPriceNew, liquidity, protoFeeBps) {
+function calcReceivedY(sqrtPriceOld, sqrtPriceNew, liquidity) {
     const _280 = new bignumber_js_1.BigNumber(2).pow(80);
     const dy = new bignumber_js_1.BigNumber(sqrtPriceNew.toBignumber())
         .dividedBy(_280)
@@ -422,9 +422,6 @@ function calcReceivedY(sqrtPriceOld, sqrtPriceNew, liquidity, protoFeeBps) {
         .multipliedBy(liquidity.toBignumber())
         .toNumber();
     const dyOut = Math.floor(-dy);
-    // return new Int(
-    //   removeProtocolFee(new BigNumber(dyOut), protoFeeBps.toBignumber()),
-    // );
     return new types_1.Int(dyOut);
 }
 exports.calcReceivedY = calcReceivedY;
