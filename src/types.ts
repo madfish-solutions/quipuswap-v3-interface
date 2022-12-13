@@ -10,6 +10,10 @@ import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 import { Address, Timestamp } from "./utils";
 import { shiftLeft, shiftRight } from "./helpers/math";
 
+export declare enum swapDirection {
+  XtoY = 0,
+  YtoX = 1,
+}
 /**
  * @description Type class to represent a Tezos Nat type which is a BigNumber
  * @example

@@ -45,7 +45,7 @@ export declare function actualLength(buffer: quipuswapV3Types.TimedCumulativesBu
 /**
  * Check that values grow monothonically (non-strictly).
  */
-export declare function isMonotonic<T>(l: T[]): boolean;
+export declare function isMonotonic(l: BigNumber[]): boolean;
 /**
  * -- All records.
  */

@@ -148,8 +148,11 @@ export function actualLength(buffer: quipuswapV3Types.TimedCumulativesBuffer) {
 /**
  * Check that values grow monothonically (non-strictly).
  */
-export function isMonotonic<T>(l: T[]) {
-  return l.every((v, i) => i === 0 || l[i - 1] <= v);
+// export function isMonotonic<T>(l: T[]) {
+//   return l.every((v, i) => i === 0 || l[i - 1] <= v);
+// }
+export function isMonotonic(l: BigNumber[]) {
+  return l.every((v, i) => i === 0 || v.gte(l[i - 1]));
 }
 
 /**

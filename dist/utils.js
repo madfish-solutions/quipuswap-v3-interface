@@ -129,8 +129,11 @@ exports.actualLength = actualLength;
 /**
  * Check that values grow monothonically (non-strictly).
  */
+// export function isMonotonic<T>(l: T[]) {
+//   return l.every((v, i) => i === 0 || l[i - 1] <= v);
+// }
 function isMonotonic(l) {
-    return l.every((v, i) => i === 0 || l[i - 1] <= v);
+    return l.every((v, i) => i === 0 || v.gte(l[i - 1]));
 }
 exports.isMonotonic = isMonotonic;
 /**

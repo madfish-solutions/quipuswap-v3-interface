@@ -2,6 +2,10 @@ import { Contract, TezosToolkit, WalletOperationBatch, OperationBatch, TransferP
 import { BigNumber } from "bignumber.js";
 import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
 import { Address, Timestamp } from "./utils";
+export declare enum swapDirection {
+    XtoY = 0,
+    YtoX = 1
+}
 /**
  * @description Type class to represent a Tezos Nat type which is a BigNumber
  * @example
