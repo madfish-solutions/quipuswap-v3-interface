@@ -224,6 +224,32 @@ export declare function liquidityDeltaToTokensDelta(liquidityDelta: Int, lowerTi
  */
 export declare const removeProtocolFee: (dy: BigNumber, protoFeeBps: BigNumber) => BigNumber;
 /**
+ * Equation 6.16
+  Δx = Δ(1/√P) * L
+  Δx = (1/√P_new - 1/√P_old) * L
+Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
+  dx = L * ( 1                     - 1                     )
+           ( ---------------------   --------------------- )
+           ( sqrt_price_new / 2^80   sqrt_price_old / 2^80 )
+Simplifying the fractions:
+  dx = L * ( 2^80           - 2^80           )
+           ( --------------   -------------- )
+           ( sqrt_price_new   sqrt_price_old )
+-}
+receivedX :: X 80 Natural -> X 80 Natural -> Natural -> Integer
+receivedX (X sqrtPriceOld) (X sqrtPriceNew) liquidity =
+  let dx =
+        fromIntegral @Natural @Double (liquidity * _280) / fromIntegral sqrtPriceNew
+        -
+        fromIntegral @Natural @Double (liquidity * _280) / fromIntegral sqrtPriceOld
+
+  -- dx is the amount of tokens to add to the pool.
+  -- To calculate how many tokens will be sent to the user, we flip the sign.
+  in
+    floor @Double @Integer (-dx)
+ */
+export declare function calcReceivedX(sqrtPriceOld: Nat, sqrtPriceNew: Nat, liquidity: Nat): Int;
+/**
  * Calculate how many Y tokens should be given to the user after depositing X tokens.
  * Equation 6.14
  *   Δy = Δ√P * L
@@ -282,7 +308,6 @@ Calculate the new `sqrt_price` after a deposit of `dy` `y` tokens.
             x = L^2 / y = 5
             P = 2000 / 5 = 400
             sqrt_price = sqrt(400) * 2^80 = 24178516392292583494123520
-
 */
 export declare function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat): Nat;
 /**

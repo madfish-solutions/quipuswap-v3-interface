@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.calcSwapFee = exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.calcReceivedY = exports.removeProtocolFee = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
+exports.calcSwapFee = exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.calcReceivedY = exports.calcReceivedX = exports.removeProtocolFee = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
 const bignumber_js_1 = require("bignumber.js");
 const utils_1 = require("../utils");
 const types_1 = require("./../types");
@@ -399,6 +399,45 @@ const removeProtocolFee = (dy, protoFeeBps) => {
 };
 exports.removeProtocolFee = removeProtocolFee;
 /**
+ * Equation 6.16
+  Δx = Δ(1/√P) * L
+  Δx = (1/√P_new - 1/√P_old) * L
+Since sqrtPrice = √P * 2^80, we can subtitute √P with sqrtPrice / 2^80:
+  dx = L * ( 1                     - 1                     )
+           ( ---------------------   --------------------- )
+           ( sqrt_price_new / 2^80   sqrt_price_old / 2^80 )
+Simplifying the fractions:
+  dx = L * ( 2^80           - 2^80           )
+           ( --------------   -------------- )
+           ( sqrt_price_new   sqrt_price_old )
+-}
+receivedX :: X 80 Natural -> X 80 Natural -> Natural -> Integer
+receivedX (X sqrtPriceOld) (X sqrtPriceNew) liquidity =
+  let dx =
+        fromIntegral @Natural @Double (liquidity * _280) / fromIntegral sqrtPriceNew
+        -
+        fromIntegral @Natural @Double (liquidity * _280) / fromIntegral sqrtPriceOld
+
+  -- dx is the amount of tokens to add to the pool.
+  -- To calculate how many tokens will be sent to the user, we flip the sign.
+  in
+    floor @Double @Integer (-dx)
+ */
+function calcReceivedX(sqrtPriceOld, sqrtPriceNew, liquidity) {
+    const _280 = new bignumber_js_1.BigNumber(2).pow(80);
+    const dx = liquidity
+        .toBignumber()
+        .multipliedBy(_280)
+        .dividedBy(sqrtPriceNew.toBignumber())
+        .integerValue(bignumber_js_1.BigNumber.ROUND_FLOOR)
+        .minus(new bignumber_js_1.BigNumber(liquidity)
+        .multipliedBy(_280)
+        .dividedBy(sqrtPriceOld.toBignumber()))
+        .integerValue(bignumber_js_1.BigNumber.ROUND_FLOOR);
+    return new types_1.Int(dx.abs());
+}
+exports.calcReceivedX = calcReceivedX;
+/**
  * Calculate how many Y tokens should be given to the user after depositing X tokens.
  * Equation 6.14
  *   Δy = Δ√P * L
@@ -474,7 +513,6 @@ Calculate the new `sqrt_price` after a deposit of `dy` `y` tokens.
             x = L^2 / y = 5
             P = 2000 / 5 = 400
             sqrt_price = sqrt(400) * 2^80 = 24178516392292583494123520
-
 */
 function calcNewPriceY(sqrtPriceOld, liquidity, dy) {
     const shiftedDy80 = shiftLeft(dy, new bignumber_js_1.BigNumber(80));
