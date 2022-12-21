@@ -510,13 +510,12 @@ export function calcReceivedX(
     .toBignumber()
     .multipliedBy(_280)
     .dividedBy(sqrtPriceNew.toBignumber())
-    .integerValue(BigNumber.ROUND_FLOOR)
     .minus(
       new BigNumber(liquidity)
         .multipliedBy(_280)
         .dividedBy(sqrtPriceOld.toBignumber()),
     )
-    .integerValue(BigNumber.ROUND_FLOOR);
+    .integerValue(BigNumber.ROUND_CEIL);
   return new Int(dx.abs());
 }
 
@@ -613,10 +612,10 @@ Calculate the new `sqrt_price` after a deposit of `dy` `y` tokens.
             sqrt_price = sqrt(400) * 2^80 = 24178516392292583494123520
 */
 export function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat): Nat {
-  const shiftedDy80 = shiftLeft(dy, new BigNumber(80));
+  const shiftedDy80 = shiftLeft(dy, new BigNumber(80)) as Nat;
   return new Nat(
     shiftedDy80
-      .integerValue(BigNumber.ROUND_FLOOR)
+      .toBignumber()
       .dividedBy(liquidity.plus(sqrtPriceOld))
       .integerValue(BigNumber.ROUND_FLOOR),
   );
