@@ -8,7 +8,7 @@ const cumulativesBuffer: qsTypes.TimedCumulativesBuffer = {
   first: new BigNumber(0),
   last: new BigNumber(0),
   reservedLength: new BigNumber(0),
-} as unknown as qsTypes.TimedCumulativesBuffer;
+} as qsTypes.TimedCumulativesBuffer;
 
 const constants: qsTypes.Constants = {
   fee_bps: new BigNumber(0),
