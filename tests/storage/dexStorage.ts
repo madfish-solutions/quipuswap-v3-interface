@@ -1,14 +1,14 @@
 import { MichelsonMap } from "@taquito/michelson-encoder";
 
-import { quipuswapV3Types as qsTypes } from "../../src/types";
+import { Nat, quipuswapV3Types as qsTypes } from "../../src/types";
 import BigNumber from "bignumber.js";
 
 const cumulativesBuffer: qsTypes.TimedCumulativesBuffer = {
-  map: MichelsonMap.fromLiteral({}),
-  first: new BigNumber(0),
-  last: new BigNumber(0),
-  reservedLength: new BigNumber(0),
-} as qsTypes.TimedCumulativesBuffer;
+  map: new qsTypes.CumulativeBufferMap(MichelsonMap.fromLiteral({}), {}),
+  first: new Nat(0),
+  last: new Nat(0),
+  reservedLength: new Nat(0),
+};
 
 const constants: qsTypes.Constants = {
   fee_bps: new BigNumber(0),
