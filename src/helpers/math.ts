@@ -612,11 +612,13 @@ Calculate the new `sqrt_price` after a deposit of `dy` `y` tokens.
             sqrt_price = sqrt(400) * 2^80 = 24178516392292583494123520
 */
 export function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat): Nat {
-  const shiftedDy80 = shiftLeft(dy, new BigNumber(80)) as Nat;
+  //const shiftedDy80 = shiftLeft(dy, new BigNumber(80)) as Nat;
+  const _280 = new BigNumber(2).pow(80);
   return new Nat(
-    shiftedDy80
-      .toBignumber()
-      .dividedBy(liquidity.plus(sqrtPriceOld))
+    _280
+      .multipliedBy(dy.toBignumber())
+      .dividedBy(liquidity)
+      .plus(sqrtPriceOld)
       .integerValue(BigNumber.ROUND_FLOOR),
   );
 }
