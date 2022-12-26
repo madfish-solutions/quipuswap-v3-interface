@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.calcSwapFee = exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.calcReceivedY = exports.calcReceivedX = exports.removeProtocolFee = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
+exports.calcSwapFee = exports.initTickAccumulators = exports.calcNewPriceY = exports.calcNewPriceX = exports.calcReceivedY = exports.calcReceivedX = exports.removeProtocolFee = exports.liquidityDeltaToTokensDelta = exports.shiftRight = exports.tickForSqrtPrice = exports.alignToSpacing = exports.shiftLeft = exports.sqrtPriceForTick = exports.steppedShiftLeft = exports.steppedShiftRight = exports.halfBpsPowRec = exports.fixedPointMul = exports.adjustScale = exports.tickAccumulatorsInside = exports.defaultLadder = void 0;
 const bignumber_js_1 = require("bignumber.js");
 const utils_1 = require("../utils");
 const types_1 = require("./../types");
@@ -314,6 +314,76 @@ function shiftLeft(x, y) {
     return x.multipliedBy(new bignumber_js_1.BigNumber(2).pow(y));
 }
 exports.shiftLeft = shiftLeft;
+const MIN_TICK_INDEX = new types_1.Int(-1048575);
+const MAX_TICK_INDEX = new types_1.Int(1048575);
+const DEFAULT_TICK_SPACING = new types_1.Nat(1);
+function sqrtPriceForTickFailSafe(tick) {
+    if (tick.lt(MIN_TICK_INDEX)) {
+        return new bignumber_js_1.BigNumber(0);
+    }
+    if (tick.gt(MAX_TICK_INDEX)) {
+        return new bignumber_js_1.BigNumber(Infinity);
+    }
+    return sqrtPriceForTick(tick).toBignumber();
+}
+function alignToSpacing(tickIndex, tickSpacing) {
+    const floorIndex = new types_1.Int(tickIndex
+        .toBignumber()
+        .dividedBy(tickSpacing)
+        .integerValue(bignumber_js_1.BigNumber.ROUND_FLOOR)
+        .multipliedBy(tickSpacing));
+    return floorIndex.lt(MIN_TICK_INDEX) ? floorIndex.plus(tickSpacing) : floorIndex;
+}
+exports.alignToSpacing = alignToSpacing;
+/**
+ * Calculates the index of the closest tick with the price below the specified one.
+ * @param sqrtPrice Price square root in X80 format
+ * @returns Tick index
+ */
+function tickForSqrtPrice(sqrtPrice, tickSpacing = DEFAULT_TICK_SPACING) {
+    const maxSqrtPrice = sqrtPriceForTickFailSafe(MAX_TICK_INDEX);
+    if (sqrtPrice.gte(maxSqrtPrice)) {
+        return alignToSpacing(MAX_TICK_INDEX, tickSpacing);
+    }
+    const minSqrtPrice = sqrtPriceForTickFailSafe(MIN_TICK_INDEX);
+    if (sqrtPrice.lte(minSqrtPrice)) {
+        return alignToSpacing(MIN_TICK_INDEX, tickSpacing);
+    }
+    const _280 = new bignumber_js_1.BigNumber(2).pow(80);
+    const base = Math.pow(Math.E, 0.0001);
+    const decimalShiftAmount = _280.precision();
+    const maxRatio = Math.sqrt(base);
+    const realPrice = sqrtPrice
+        .shiftedBy(decimalShiftAmount)
+        .div(_280)
+        .shiftedBy(-decimalShiftAmount)
+        .pow(2);
+    let defaultSpacingTickIndex = new types_1.Int(Math.floor(Math.log(realPrice.toNumber()) / Math.log(base)));
+    let tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
+    let nextTickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex.plus(1));
+    while (tickSqrtPrice.gt(sqrtPrice) || nextTickSqrtPrice.lte(sqrtPrice)) {
+        const ratio = sqrtPrice
+            .shiftedBy(decimalShiftAmount)
+            .div(tickSqrtPrice)
+            .shiftedBy(-decimalShiftAmount)
+            .toNumber();
+        const rawTickDelta = Math.log(ratio) / Math.log(maxRatio);
+        const tickDelta = rawTickDelta < 0 ? Math.floor(rawTickDelta) : Math.ceil(rawTickDelta);
+        if (!Number.isFinite(tickDelta)) {
+            defaultSpacingTickIndex = tickDelta < 0 ? new types_1.Int(-1048575) : new types_1.Int(1048575);
+        }
+        else if (tickDelta === 0) {
+            break;
+        }
+        else {
+            defaultSpacingTickIndex = defaultSpacingTickIndex.plus(tickDelta);
+        }
+        tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
+        nextTickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex.plus(1));
+    }
+    return alignToSpacing(defaultSpacingTickIndex, tickSpacing);
+}
+exports.tickForSqrtPrice = tickForSqrtPrice;
 /**
  * A bitwise shift right operation
  */

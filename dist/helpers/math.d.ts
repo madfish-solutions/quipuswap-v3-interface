@@ -204,6 +204,13 @@ export declare function steppedShiftLeft(x: BigNumber, y: BigNumber): BigNumber;
  */
 export declare function sqrtPriceForTick(tick: Int): Nat;
 export declare function shiftLeft(x: BigNumber, y: BigNumber): BigNumber;
+export declare function alignToSpacing(tickIndex: Int, tickSpacing: Nat): Int;
+/**
+ * Calculates the index of the closest tick with the price below the specified one.
+ * @param sqrtPrice Price square root in X80 format
+ * @returns Tick index
+ */
+export declare function tickForSqrtPrice(sqrtPrice: Nat, tickSpacing?: Nat): Int;
 /**
  * A bitwise shift right operation
  */
