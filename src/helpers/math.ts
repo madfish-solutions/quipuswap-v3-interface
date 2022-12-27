@@ -438,7 +438,6 @@ export function tickForSqrtPrice(
     defaultSpacingTickIndex.plus(1),
   );
 
-  let i = 0;
   while (tickSqrtPrice.gt(sqrtPrice) || nextTickSqrtPrice.lte(sqrtPrice)) {
     if (tickSqrtPrice.gt(sqrtPrice)) {
       estimationUpper = new Int(defaultSpacingTickIndex).minus(1);

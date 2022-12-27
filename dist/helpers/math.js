@@ -367,7 +367,6 @@ function tickForSqrtPrice(sqrtPrice, tickSpacing = new types_1.Nat(1)) {
     let defaultSpacingTickIndex = new types_1.Int(Math.floor(Math.log(realPrice.toNumber()) / Math.log(base)));
     let tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
     let nextTickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex.plus(1));
-    let i = 0;
     while (tickSqrtPrice.gt(sqrtPrice) || nextTickSqrtPrice.lte(sqrtPrice)) {
         if (tickSqrtPrice.gt(sqrtPrice)) {
             estimationUpper = new types_1.Int(defaultSpacingTickIndex).minus(1);
