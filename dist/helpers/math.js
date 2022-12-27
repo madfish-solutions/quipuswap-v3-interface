@@ -314,10 +314,9 @@ function shiftLeft(x, y) {
     return x.multipliedBy(new bignumber_js_1.BigNumber(2).pow(y));
 }
 exports.shiftLeft = shiftLeft;
-const MIN_TICK_INDEX = new types_1.Int(-1048575);
-const MAX_TICK_INDEX = new types_1.Int(1048575);
-const DEFAULT_TICK_SPACING = new types_1.Nat(1);
 function sqrtPriceForTickFailSafe(tick) {
+    const MIN_TICK_INDEX = new types_1.Int(-1048575);
+    const MAX_TICK_INDEX = new types_1.Int(1048575);
     if (tick.lt(MIN_TICK_INDEX)) {
         return new bignumber_js_1.BigNumber(0);
     }
@@ -327,12 +326,15 @@ function sqrtPriceForTickFailSafe(tick) {
     return sqrtPriceForTick(tick).toBignumber();
 }
 function alignToSpacing(tickIndex, tickSpacing) {
+    const MIN_TICK_INDEX = new types_1.Int(-1048575);
     const floorIndex = new types_1.Int(tickIndex
         .toBignumber()
         .dividedBy(tickSpacing)
         .integerValue(bignumber_js_1.BigNumber.ROUND_FLOOR)
         .multipliedBy(tickSpacing));
-    return floorIndex.lt(MIN_TICK_INDEX) ? floorIndex.plus(tickSpacing) : floorIndex;
+    return floorIndex.lt(MIN_TICK_INDEX)
+        ? floorIndex.plus(tickSpacing)
+        : floorIndex;
 }
 exports.alignToSpacing = alignToSpacing;
 /**
@@ -340,7 +342,9 @@ exports.alignToSpacing = alignToSpacing;
  * @param sqrtPrice Price square root in X80 format
  * @returns Tick index
  */
-function tickForSqrtPrice(sqrtPrice, tickSpacing = DEFAULT_TICK_SPACING) {
+function tickForSqrtPrice(sqrtPrice, tickSpacing = new types_1.Nat(1)) {
+    const MIN_TICK_INDEX = new types_1.Int(-1048575);
+    const MAX_TICK_INDEX = new types_1.Int(1048575);
     const maxSqrtPrice = sqrtPriceForTickFailSafe(MAX_TICK_INDEX);
     if (sqrtPrice.gte(maxSqrtPrice)) {
         return alignToSpacing(MAX_TICK_INDEX, tickSpacing);
@@ -370,7 +374,7 @@ function tickForSqrtPrice(sqrtPrice, tickSpacing = DEFAULT_TICK_SPACING) {
         const rawTickDelta = Math.log(ratio) / Math.log(maxRatio);
         const tickDelta = rawTickDelta < 0 ? Math.floor(rawTickDelta) : Math.ceil(rawTickDelta);
         if (!Number.isFinite(tickDelta)) {
-            defaultSpacingTickIndex = tickDelta < 0 ? new types_1.Int(-1048575) : new types_1.Int(1048575);
+            defaultSpacingTickIndex = tickDelta < 0 ? MIN_TICK_INDEX : MAX_TICK_INDEX;
         }
         else if (tickDelta === 0) {
             break;

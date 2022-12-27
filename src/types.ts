@@ -480,11 +480,13 @@ export namespace quipuswapV3Types {
             time: new BigNumber(Date.parse(value.time) / 1000),
             tick: {
               sum: new Int(value.tick.sum),
-              blockStartValue: value.tick.block_start_value,
+              blockStartValue: new Int(value.tick.block_start_value),
             },
             spl: {
               sum: new x128n(value.spl.sum),
-              blockStartLiquidityValue: value.spl.block_start_liquidity_value,
+              blockStartLiquidityValue: new Nat(
+                value.spl.block_start_liquidity_value,
+              ),
             },
           };
         }
@@ -495,7 +497,7 @@ export namespace quipuswapV3Types {
       const newCumulativesMichelsonMap = new MichelsonMap();
       const newCumulativesMap = {};
       let reservedSlotsList: Nat[] = [];
-      for (let i = 0; i < extraReservedSlots; i++) {
+      for (let i = 0; i <= extraReservedSlots; i++) {
         reservedSlotsList.push(new Nat(1));
         newCumulativesMichelsonMap.set(i, {
           time: "0",

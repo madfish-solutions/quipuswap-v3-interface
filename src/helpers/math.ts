@@ -364,11 +364,9 @@ export function shiftLeft(x: BigNumber, y: BigNumber) {
   return x.multipliedBy(new BigNumber(2).pow(y));
 }
 
-const MIN_TICK_INDEX = new Int(-1048575);
-const MAX_TICK_INDEX = new Int(1048575);
-const DEFAULT_TICK_SPACING = new Nat(1);
-
 function sqrtPriceForTickFailSafe(tick: Int) {
+  const MIN_TICK_INDEX = new Int(-1048575);
+  const MAX_TICK_INDEX = new Int(1048575);
   if (tick.lt(MIN_TICK_INDEX)) {
     return new BigNumber(0);
   }
@@ -381,14 +379,18 @@ function sqrtPriceForTickFailSafe(tick: Int) {
 }
 
 export function alignToSpacing(tickIndex: Int, tickSpacing: Nat) {
-  const floorIndex = new Int(tickIndex
-    .toBignumber()
-    .dividedBy(tickSpacing)
-    .integerValue(BigNumber.ROUND_FLOOR)
-    .multipliedBy(tickSpacing)
+  const MIN_TICK_INDEX = new Int(-1048575);
+  const floorIndex = new Int(
+    tickIndex
+      .toBignumber()
+      .dividedBy(tickSpacing)
+      .integerValue(BigNumber.ROUND_FLOOR)
+      .multipliedBy(tickSpacing),
   );
 
-  return floorIndex.lt(MIN_TICK_INDEX) ? floorIndex.plus(tickSpacing) : floorIndex;
+  return floorIndex.lt(MIN_TICK_INDEX)
+    ? floorIndex.plus(tickSpacing)
+    : floorIndex;
 }
 
 /**
@@ -396,7 +398,13 @@ export function alignToSpacing(tickIndex: Int, tickSpacing: Nat) {
  * @param sqrtPrice Price square root in X80 format
  * @returns Tick index
  */
-export function tickForSqrtPrice(sqrtPrice: Nat, tickSpacing = DEFAULT_TICK_SPACING): Int {
+export function tickForSqrtPrice(
+  sqrtPrice: Nat,
+  tickSpacing = new Nat(1),
+): Int {
+  const MIN_TICK_INDEX = new Int(-1048575);
+  const MAX_TICK_INDEX = new Int(1048575);
+
   const maxSqrtPrice = sqrtPriceForTickFailSafe(MAX_TICK_INDEX);
 
   if (sqrtPrice.gte(maxSqrtPrice)) {
@@ -420,10 +428,12 @@ export function tickForSqrtPrice(sqrtPrice: Nat, tickSpacing = DEFAULT_TICK_SPAC
     .shiftedBy(-decimalShiftAmount)
     .pow(2);
   let defaultSpacingTickIndex = new Int(
-    Math.floor(Math.log(realPrice.toNumber()) / Math.log(base))
+    Math.floor(Math.log(realPrice.toNumber()) / Math.log(base)),
   );
   let tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
-  let nextTickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex.plus(1));
+  let nextTickSqrtPrice = sqrtPriceForTickFailSafe(
+    defaultSpacingTickIndex.plus(1),
+  );
 
   while (tickSqrtPrice.gt(sqrtPrice) || nextTickSqrtPrice.lte(sqrtPrice)) {
     const ratio = sqrtPrice
@@ -432,16 +442,19 @@ export function tickForSqrtPrice(sqrtPrice: Nat, tickSpacing = DEFAULT_TICK_SPAC
       .shiftedBy(-decimalShiftAmount)
       .toNumber();
     const rawTickDelta = Math.log(ratio) / Math.log(maxRatio);
-    const tickDelta = rawTickDelta < 0 ? Math.floor(rawTickDelta) : Math.ceil(rawTickDelta);
+    const tickDelta =
+      rawTickDelta < 0 ? Math.floor(rawTickDelta) : Math.ceil(rawTickDelta);
     if (!Number.isFinite(tickDelta)) {
-      defaultSpacingTickIndex = tickDelta < 0 ? new Int(-1048575) : new Int(1048575);
+      defaultSpacingTickIndex = tickDelta < 0 ? MIN_TICK_INDEX : MAX_TICK_INDEX;
     } else if (tickDelta === 0) {
       break;
     } else {
       defaultSpacingTickIndex = defaultSpacingTickIndex.plus(tickDelta);
     }
     tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
-    nextTickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex.plus(1));
+    nextTickSqrtPrice = sqrtPriceForTickFailSafe(
+      defaultSpacingTickIndex.plus(1),
+    );
   }
 
   return alignToSpacing(defaultSpacingTickIndex, tickSpacing);
