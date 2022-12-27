@@ -337,6 +337,10 @@ function alignToSpacing(tickIndex, tickSpacing) {
         : floorIndex;
 }
 exports.alignToSpacing = alignToSpacing;
+function enhancedDiv(x, y) {
+    const shiftAmount = Math.max(y.e, 0) + y.decimalPlaces();
+    return x.shiftedBy(shiftAmount).dividedBy(y).shiftedBy(-shiftAmount);
+}
 /**
  * Calculates the index of the closest tick with the price below the specified one.
  * @param sqrtPrice Price square root in X80 format
@@ -355,24 +359,32 @@ function tickForSqrtPrice(sqrtPrice, tickSpacing = new types_1.Nat(1)) {
     }
     const _280 = new bignumber_js_1.BigNumber(2).pow(80);
     const base = Math.pow(Math.E, 0.0001);
-    const decimalShiftAmount = _280.precision();
     const maxRatio = Math.sqrt(base);
-    const realPrice = sqrtPrice
-        .shiftedBy(decimalShiftAmount)
-        .div(_280)
-        .shiftedBy(-decimalShiftAmount)
-        .pow(2);
+    const realPrice = enhancedDiv(sqrtPrice, _280).pow(2);
+    let estimationUpper = new types_1.Int(MAX_TICK_INDEX);
+    let estimationLower = new types_1.Int(MIN_TICK_INDEX);
     let defaultSpacingTickIndex = new types_1.Int(Math.floor(Math.log(realPrice.toNumber()) / Math.log(base)));
     let tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
     let nextTickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex.plus(1));
     while (tickSqrtPrice.gt(sqrtPrice) || nextTickSqrtPrice.lte(sqrtPrice)) {
-        const ratio = sqrtPrice
-            .shiftedBy(decimalShiftAmount)
-            .div(tickSqrtPrice)
-            .shiftedBy(-decimalShiftAmount)
-            .toNumber();
-        const rawTickDelta = Math.log(ratio) / Math.log(maxRatio);
-        const tickDelta = rawTickDelta < 0 ? Math.floor(rawTickDelta) : Math.ceil(rawTickDelta);
+        if (tickSqrtPrice.gt(sqrtPrice)) {
+            estimationUpper = new types_1.Int(defaultSpacingTickIndex).minus(1);
+        }
+        else if (nextTickSqrtPrice.gt(sqrtPrice)) {
+            estimationUpper = new types_1.Int(defaultSpacingTickIndex);
+        }
+        if (tickSqrtPrice.lt(sqrtPrice)) {
+            estimationLower = new types_1.Int(defaultSpacingTickIndex);
+        }
+        const ratio = enhancedDiv(sqrtPrice, tickSqrtPrice);
+        const rawTickDelta = Math.log(ratio.toNumber()) / Math.log(maxRatio);
+        let tickDelta = rawTickDelta < 0 ? Math.floor(rawTickDelta) : Math.ceil(rawTickDelta);
+        if (tickDelta === 0 && ratio.lt(1)) {
+            tickDelta = -1;
+        }
+        else if (tickDelta === 0 && ratio.gt(1)) {
+            tickDelta = 1;
+        }
         if (!Number.isFinite(tickDelta)) {
             defaultSpacingTickIndex = tickDelta < 0 ? MIN_TICK_INDEX : MAX_TICK_INDEX;
         }
@@ -380,7 +392,7 @@ function tickForSqrtPrice(sqrtPrice, tickSpacing = new types_1.Nat(1)) {
             break;
         }
         else {
-            defaultSpacingTickIndex = defaultSpacingTickIndex.plus(tickDelta);
+            defaultSpacingTickIndex = new types_1.Int(bignumber_js_1.BigNumber.max(bignumber_js_1.BigNumber.min(defaultSpacingTickIndex.plus(tickDelta), estimationUpper), estimationLower));
         }
         tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
         nextTickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex.plus(1));
