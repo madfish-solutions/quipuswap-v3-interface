@@ -362,10 +362,22 @@ function tickForSqrtPrice(sqrtPrice, tickSpacing = new types_1.Nat(1)) {
     const decimalShiftAmount = 80;
     const maxRatio = Math.sqrt(base);
     const realPrice = enhancedDiv(sqrtPrice, _280).pow(2);
+    let estimationUpper = new types_1.Int(MAX_TICK_INDEX);
+    let estimationLower = new types_1.Int(MIN_TICK_INDEX);
     let defaultSpacingTickIndex = new types_1.Int(Math.floor(Math.log(realPrice.toNumber()) / Math.log(base)));
     let tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
     let nextTickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex.plus(1));
+    let i = 0;
     while (tickSqrtPrice.gt(sqrtPrice) || nextTickSqrtPrice.lte(sqrtPrice)) {
+        if (tickSqrtPrice.gt(sqrtPrice)) {
+            estimationUpper = new types_1.Int(defaultSpacingTickIndex).minus(1);
+        }
+        else if (nextTickSqrtPrice.gt(sqrtPrice)) {
+            estimationUpper = new types_1.Int(defaultSpacingTickIndex);
+        }
+        if (tickSqrtPrice.lt(sqrtPrice)) {
+            estimationLower = new types_1.Int(defaultSpacingTickIndex);
+        }
         const ratio = enhancedDiv(sqrtPrice, tickSqrtPrice);
         const rawTickDelta = Math.log(ratio.toNumber()) / Math.log(maxRatio);
         let tickDelta = rawTickDelta < 0 ? Math.floor(rawTickDelta) : Math.ceil(rawTickDelta);
@@ -382,7 +394,7 @@ function tickForSqrtPrice(sqrtPrice, tickSpacing = new types_1.Nat(1)) {
             break;
         }
         else {
-            defaultSpacingTickIndex = defaultSpacingTickIndex.plus(tickDelta);
+            defaultSpacingTickIndex = new types_1.Int(bignumber_js_1.BigNumber.max(bignumber_js_1.BigNumber.min(defaultSpacingTickIndex.plus(tickDelta), estimationUpper), estimationLower));
         }
         tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
         nextTickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex.plus(1));

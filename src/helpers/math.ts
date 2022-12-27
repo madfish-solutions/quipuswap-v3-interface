@@ -428,6 +428,8 @@ export function tickForSqrtPrice(
   const maxRatio = Math.sqrt(base);
 
   const realPrice = enhancedDiv(sqrtPrice, _280).pow(2);
+  let estimationUpper = new Int(MAX_TICK_INDEX);
+  let estimationLower = new Int(MIN_TICK_INDEX);
   let defaultSpacingTickIndex = new Int(
     Math.floor(Math.log(realPrice.toNumber()) / Math.log(base)),
   );
@@ -436,7 +438,16 @@ export function tickForSqrtPrice(
     defaultSpacingTickIndex.plus(1),
   );
 
+  let i = 0;
   while (tickSqrtPrice.gt(sqrtPrice) || nextTickSqrtPrice.lte(sqrtPrice)) {
+    if (tickSqrtPrice.gt(sqrtPrice)) {
+      estimationUpper = new Int(defaultSpacingTickIndex).minus(1);
+    } else if (nextTickSqrtPrice.gt(sqrtPrice)) {
+      estimationUpper = new Int(defaultSpacingTickIndex);
+    }
+    if (tickSqrtPrice.lt(sqrtPrice)) {
+      estimationLower = new Int(defaultSpacingTickIndex);
+    }
     const ratio = enhancedDiv(sqrtPrice, tickSqrtPrice);
     const rawTickDelta = Math.log(ratio.toNumber()) / Math.log(maxRatio);
     let tickDelta =
@@ -451,7 +462,12 @@ export function tickForSqrtPrice(
     } else if (tickDelta === 0) {
       break;
     } else {
-      defaultSpacingTickIndex = defaultSpacingTickIndex.plus(tickDelta);
+      defaultSpacingTickIndex = new Int(
+        BigNumber.max(
+          BigNumber.min(defaultSpacingTickIndex.plus(tickDelta), estimationUpper),
+          estimationLower
+        )
+      );
     }
     tickSqrtPrice = sqrtPriceForTickFailSafe(defaultSpacingTickIndex);
     nextTickSqrtPrice = sqrtPriceForTickFailSafe(
