@@ -184,9 +184,9 @@ export const safeObserve = async (pool: QuipuswapV3, time: BigNumber) => {
     };
   } catch (e) {
     const block = await pool.tezos.rpc.getBlockHeader();
-    const ts = new BigNumber(Date.parse(block.timestamp) / 1000)
-      .plus(1)
-      .integerValue(BigNumber.ROUND_FLOOR);
+    const ts = new BigNumber(Date.parse(block.timestamp) / 1000).integerValue(
+      BigNumber.ROUND_CEIL,
+    );
     return safeObserve(pool, ts);
   }
 };

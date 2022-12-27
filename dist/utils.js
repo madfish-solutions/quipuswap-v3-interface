@@ -158,9 +158,7 @@ const safeObserve = (pool, time) => __awaiter(void 0, void 0, void 0, function* 
     }
     catch (e) {
         const block = yield pool.tezos.rpc.getBlockHeader();
-        const ts = new bignumber_js_1.default(Date.parse(block.timestamp) / 1000)
-            .plus(1)
-            .integerValue(bignumber_js_1.default.ROUND_FLOOR);
+        const ts = new bignumber_js_1.default(Date.parse(block.timestamp) / 1000).integerValue(bignumber_js_1.default.ROUND_CEIL);
         return (0, exports.safeObserve)(pool, ts);
     }
 });
