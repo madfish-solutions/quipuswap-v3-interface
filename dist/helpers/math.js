@@ -359,7 +359,6 @@ function tickForSqrtPrice(sqrtPrice, tickSpacing = new types_1.Nat(1)) {
     }
     const _280 = new bignumber_js_1.BigNumber(2).pow(80);
     const base = Math.pow(Math.E, 0.0001);
-    const decimalShiftAmount = 80;
     const maxRatio = Math.sqrt(base);
     const realPrice = enhancedDiv(sqrtPrice, _280).pow(2);
     let estimationUpper = new types_1.Int(MAX_TICK_INDEX);

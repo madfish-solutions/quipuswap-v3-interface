@@ -424,7 +424,6 @@ export function tickForSqrtPrice(
 
   const _280 = new BigNumber(2).pow(80);
   const base = Math.E ** 0.0001;
-  const decimalShiftAmount = 80;
   const maxRatio = Math.sqrt(base);
 
   const realPrice = enhancedDiv(sqrtPrice, _280).pow(2);
