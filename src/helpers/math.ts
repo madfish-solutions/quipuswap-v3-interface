@@ -393,6 +393,11 @@ export function alignToSpacing(tickIndex: Int, tickSpacing: Nat) {
     : floorIndex;
 }
 
+function enhancedDiv(x: BigNumber, y: BigNumber) {
+  const shiftAmount = Math.max(y.e, 0) + y.decimalPlaces();
+  return x.shiftedBy(shiftAmount).dividedBy(y).shiftedBy(-shiftAmount);
+}
+
 /**
  * Calculates the index of the closest tick with the price below the specified one.
  * @param sqrtPrice Price square root in X80 format
@@ -419,14 +424,10 @@ export function tickForSqrtPrice(
 
   const _280 = new BigNumber(2).pow(80);
   const base = Math.E ** 0.0001;
-  const decimalShiftAmount = _280.precision();
+  const decimalShiftAmount = 80;
   const maxRatio = Math.sqrt(base);
 
-  const realPrice = sqrtPrice
-    .shiftedBy(decimalShiftAmount)
-    .div(_280)
-    .shiftedBy(-decimalShiftAmount)
-    .pow(2);
+  const realPrice = enhancedDiv(sqrtPrice, _280).pow(2);
   let defaultSpacingTickIndex = new Int(
     Math.floor(Math.log(realPrice.toNumber()) / Math.log(base)),
   );
@@ -436,14 +437,15 @@ export function tickForSqrtPrice(
   );
 
   while (tickSqrtPrice.gt(sqrtPrice) || nextTickSqrtPrice.lte(sqrtPrice)) {
-    const ratio = sqrtPrice
-      .shiftedBy(decimalShiftAmount)
-      .div(tickSqrtPrice)
-      .shiftedBy(-decimalShiftAmount)
-      .toNumber();
-    const rawTickDelta = Math.log(ratio) / Math.log(maxRatio);
-    const tickDelta =
+    const ratio = enhancedDiv(sqrtPrice, tickSqrtPrice);
+    const rawTickDelta = Math.log(ratio.toNumber()) / Math.log(maxRatio);
+    let tickDelta =
       rawTickDelta < 0 ? Math.floor(rawTickDelta) : Math.ceil(rawTickDelta);
+    if (tickDelta === 0 && ratio.lt(1)) {
+      tickDelta = -1;
+    } else if (tickDelta === 0 && ratio.gt(1)) {
+      tickDelta = 1;
+    }
     if (!Number.isFinite(tickDelta)) {
       defaultSpacingTickIndex = tickDelta < 0 ? MIN_TICK_INDEX : MAX_TICK_INDEX;
     } else if (tickDelta === 0) {
