@@ -731,7 +731,7 @@ export function calcNewPriceY(sqrtPriceOld: Nat, liquidity: Nat, dy: Nat): Nat {
       .multipliedBy(dy.toBignumber())
       .dividedBy(liquidity)
       .plus(sqrtPriceOld)
-      .integerValue(BigNumber.ROUND_FLOOR),
+      .integerValue(BigNumber.ROUND_CEIL),
   );
 }
 
