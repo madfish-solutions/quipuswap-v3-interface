@@ -514,18 +514,9 @@ export class QuipuswapV3 {
     } as unknown as TransferParams;
   }
 
-  /** Get Oracle values at certain given range. Reimplemented from Haskell Code below this line.
-   * observe cfmm = do
-  currentTime <- getNow
-  consumer <- originateSimple @[CumulativesValue] "observe-consumer" [] contractConsumer
-  call cfmm (Call @"Observe") $ mkView [currentTime] consumer
-  getStorage consumer >>= \case
-    [[cv]] -> pure cv
-    _ -> failure "Expected to get exactly 1 CumulativeValue"
-  */
   async observe(
     timestamps: string[] = [],
-  ): Promise<quipuswapV3Types.CumulativesValue> {
+  ): Promise<quipuswapV3Types.CumulativesValue[]> {
     if (timestamps.length === 0) {
       const ts = (await this.tezos.rpc.getBlockHeader()).timestamp;
       const now = new Timestamp(ts).toString();

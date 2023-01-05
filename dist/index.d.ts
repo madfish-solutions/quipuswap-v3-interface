@@ -98,15 +98,6 @@ export declare class QuipuswapV3 {
      */
     updateOperators(params: fa2Types.UpdateOperators[]): Promise<QsReturn>;
     increaseObservationCount(count: BigNumber): Promise<TransferParams>;
-    /** Get Oracle values at certain given range. Reimplemented from Haskell Code below this line.
-     * observe cfmm = do
-    currentTime <- getNow
-    consumer <- originateSimple @[CumulativesValue] "observe-consumer" [] contractConsumer
-    call cfmm (Call @"Observe") $ mkView [currentTime] consumer
-    getStorage consumer >>= \case
-      [[cv]] -> pure cv
-      _ -> failure "Expected to get exactly 1 CumulativeValue"
-    */
-    observe(timestamps?: string[]): Promise<quipuswapV3Types.CumulativesValue>;
+    observe(timestamps?: string[]): Promise<quipuswapV3Types.CumulativesValue[]>;
     setCallSetting(callSetting: CallSettings): void;
 }

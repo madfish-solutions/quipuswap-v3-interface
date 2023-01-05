@@ -389,15 +389,6 @@ class QuipuswapV3 {
             };
         });
     }
-    /** Get Oracle values at certain given range. Reimplemented from Haskell Code below this line.
-     * observe cfmm = do
-    currentTime <- getNow
-    consumer <- originateSimple @[CumulativesValue] "observe-consumer" [] contractConsumer
-    call cfmm (Call @"Observe") $ mkView [currentTime] consumer
-    getStorage consumer >>= \case
-      [[cv]] -> pure cv
-      _ -> failure "Expected to get exactly 1 CumulativeValue"
-    */
     observe(timestamps = []) {
         return __awaiter(this, void 0, void 0, function* () {
             if (timestamps.length === 0) {
