@@ -606,7 +606,7 @@ function calcNewPriceY(sqrtPriceOld, liquidity, dy) {
         .multipliedBy(dy.toBignumber())
         .dividedBy(liquidity)
         .plus(sqrtPriceOld)
-        .integerValue(bignumber_js_1.BigNumber.ROUND_FLOOR));
+        .integerValue(bignumber_js_1.BigNumber.ROUND_CEIL));
 }
 exports.calcNewPriceY = calcNewPriceY;
 /**
