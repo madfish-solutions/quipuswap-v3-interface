@@ -101,8 +101,8 @@ function xToYRec(p: XToYRecParam): XToYRecParam {
   }
 
   // TODO: change fees logic after new Quipuswap V3 contracts are deployed
-  let fee = calcSwapFee(p.s.constants.feeBps.toBignumber(), p.dx.toBignumber());
-  let sqrtPriceNew = calcNewPriceX(p.s.sqrtPrice, p.s.liquidity, p.dx.minus(fee));
+  let totalFee = calcSwapFee(p.s.constants.feeBps.toBignumber(), p.dx.toBignumber());
+  let sqrtPriceNew = calcNewPriceX(p.s.sqrtPrice, p.s.liquidity, p.dx.minus(totalFee));
   const curTickIndexNew = calcNewCurTickIndex(p.s.curTickIndex, p.s.sqrtPrice, sqrtPriceNew);
   if (curTickIndexNew.gte(p.s.curTickWitness)) {
     const dy = shiftRight(
@@ -135,7 +135,7 @@ function xToYRec(p: XToYRecParam): XToYRecParam {
     .multipliedBy(HUNDRED_PERCENT_BPS)
     .dividedBy(oneMinusFeeBps(p.s.constants.feeBps))
     .integerValue(BigNumber.ROUND_CEIL);
-  fee = dxConsumed.minus(dxForDy);
+  totalFee = dxConsumed.minus(dxForDy);
   const sums = p.s.lastCumulative;
   const tickCumulativeOutsideNew = sums.tick.sum.minus(tick.tickCumulativeOutside);
   const tickNew = {
@@ -178,9 +178,8 @@ function yToXRec(p: YToXRecParam): YToXRecParam {
     return p;
   }
 
-  // TODO: change fees logic after new Quipuswap V3 contracts are deployed
-  let fee = calcSwapFee(p.s.constants.feeBps.toBignumber(), p.dy.toBignumber());
-  let dyMinusFee = p.dy.minus(fee);
+  let totalFee = calcSwapFee(p.s.constants.feeBps.toBignumber(), p.dy.toBignumber());
+  let dyMinusFee = p.dy.minus(totalFee);
   let sqrtPriceNew = calcNewPriceY(p.s.sqrtPrice, p.s.liquidity, dyMinusFee);
   const curTickIndexNew = calcNewCurTickIndex(p.s.curTickIndex, p.s.sqrtPrice, sqrtPriceNew);
   const tick = p.s.ticks[p.s.curTickWitness.toFixed()];
@@ -224,7 +223,7 @@ function yToXRec(p: YToXRecParam): YToXRecParam {
     .multipliedBy(HUNDRED_PERCENT_BPS)
     .dividedBy(oneMinusFeeBps(p.s.constants.feeBps))
     .integerValue(BigNumber.ROUND_CEIL);
-  fee = dyConsumed.minus(dyMinusFee);
+  totalFee = dyConsumed.minus(dyForDx);
   const sums = p.s.lastCumulative;
   const tickCumulativeOutsideNew = sums.tick.sum.minus(nextTick.tickCumulativeOutside);
   const nextTickNew = {
