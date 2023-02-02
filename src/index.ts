@@ -1,5 +1,5 @@
-import { Contract, TezosToolkit, TransferParams } from "@taquito/taquito";
-import { BigNumber } from "bignumber.js";
+import { Contract, TezosToolkit, TransferParams } from '@taquito/taquito';
+import { BigNumber } from 'bignumber.js';
 import {
   fa2Types,
   quipuswapV3Types,
@@ -8,11 +8,11 @@ import {
   QsReturn,
   Nat,
   Int,
-} from "./types";
-import { Address, Timestamp } from "./utils";
-import { defaultCallSettings } from "./helpers/defaults";
-import { extendCallQS } from "./helpers/decorators";
-import { MichelsonMap, MichelsonMapKey } from "@taquito/michelson-encoder";
+} from './types';
+import { Address, Timestamp } from './utils';
+import { defaultCallSettings } from './helpers/defaults';
+import { extendCallQS } from './helpers/decorators';
+import { MichelsonMap, MichelsonMapKey } from '@taquito/michelson-encoder';
 
 export class QuipuswapV3Methods {
   static swapXY(
@@ -86,8 +86,8 @@ export class QuipuswapV3Methods {
     toX: Address,
     toY: Address,
     deadline: Timestamp,
-    maximumTokensContributedX: Nat,
-    maximumTokensContributedY: Nat,
+    maximumTokensContributedX: Int,
+    maximumTokensContributedY: Int,
   ): TransferParams {
     const transferParams = contract.methods
       .update_position(
@@ -133,7 +133,7 @@ export class QuipuswapV3Methods {
   ): TransferParams {
     params = [...params];
     const updateOperatorsParams = params.map(param => {
-      if ("add_operator" in param) {
+      if ('add_operator' in param) {
         return {
           add_operator: {
             owner: param.add_operator.owner.toString(),
@@ -263,8 +263,7 @@ export class QuipuswapV3 {
   storage: quipuswapV3Types.Storage;
   constructor(
     public callSettings: CallSettings = defaultCallSettings,
-    public syncInterval: number = 0,
-    public confirmtaionTimeout: number = 500000,
+    public confirmationCount: number = 1,
   ) {}
 
   async init(tezos: TezosToolkit, contractAddress: string) {
@@ -432,8 +431,8 @@ export class QuipuswapV3 {
       new Address(toX),
       new Address(toY),
       new Timestamp(deadline),
-      new Nat(maximumTokensContributedX),
-      new Nat(maximumTokensContributedY),
+      new Int(maximumTokensContributedX),
+      new Int(maximumTokensContributedY),
     ];
     return {
       callParams: params,
@@ -482,7 +481,7 @@ export class QuipuswapV3 {
   @extendCallQS
   async updateOperators(params: fa2Types.UpdateOperators[]): Promise<QsReturn> {
     const updateOperatorsParams = params.map(param => {
-      if ("add_operator" in param) {
+      if ('add_operator' in param) {
         return {
           add_operator: {
             owner: new Address(param.add_operator.owner),

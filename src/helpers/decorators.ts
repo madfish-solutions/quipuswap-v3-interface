@@ -28,13 +28,12 @@ export async function sendAndConfirmation<T>(
   contract: Contract,
   tezos: TezosToolkit,
   callback: (contract: Contract, ...params: T[]) => TransferParams,
-  SYNC_INTERVAL: number,
-  CONFIRM_TIMEOUT: number,
+  confirmationCount: number,
   ...callParams: T[]
 ) {
   const transferParams = callback(contract, ...callParams);
   const operation = await sendBatch(tezos, [transferParams]);
-  await operation.confirmation(1);
+  await operation.confirmation(confirmationCount);
   // await confirmOperation(
   //   tezos,
   //   operation.opHash,
@@ -60,8 +59,7 @@ export function extendCallQS<T>(
           this.contract,
           this.tezos,
           callback,
-          this.syncInterval,
-          this.confirmtaionTimeout,
+          this.confirmationCount,
           ...callParams,
         );
       default:

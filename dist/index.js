@@ -77,7 +77,7 @@ class QuipuswapV3Methods {
     static updateOperators(contract, ...params) {
         params = [...params];
         const updateOperatorsParams = params.map(param => {
-            if ("add_operator" in param) {
+            if ('add_operator' in param) {
                 return {
                     add_operator: {
                         owner: param.add_operator.owner.toString(),
@@ -183,10 +183,9 @@ class QuipuswapV3Storage {
 }
 exports.QuipuswapV3Storage = QuipuswapV3Storage;
 class QuipuswapV3 {
-    constructor(callSettings = defaults_1.defaultCallSettings, syncInterval = 0, confirmtaionTimeout = 500000) {
+    constructor(callSettings = defaults_1.defaultCallSettings, confirmationCount = 1) {
         this.callSettings = callSettings;
-        this.syncInterval = syncInterval;
-        this.confirmtaionTimeout = confirmtaionTimeout;
+        this.confirmationCount = confirmationCount;
     }
     init(tezos, contractAddress) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -306,8 +305,8 @@ class QuipuswapV3 {
                 new utils_1.Address(toX),
                 new utils_1.Address(toY),
                 new utils_1.Timestamp(deadline),
-                new types_1.Nat(maximumTokensContributedX),
-                new types_1.Nat(maximumTokensContributedY),
+                new types_1.Int(maximumTokensContributedX),
+                new types_1.Int(maximumTokensContributedY),
             ];
             return {
                 callParams: params,
@@ -356,7 +355,7 @@ class QuipuswapV3 {
     updateOperators(params) {
         return __awaiter(this, void 0, void 0, function* () {
             const updateOperatorsParams = params.map(param => {
-                if ("add_operator" in param) {
+                if ('add_operator' in param) {
                     return {
                         add_operator: {
                             owner: new utils_1.Address(param.add_operator.owner),

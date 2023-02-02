@@ -25,11 +25,11 @@ function send(contract, tezos, callback, ...callParams) {
     });
 }
 exports.send = send;
-function sendAndConfirmation(contract, tezos, callback, SYNC_INTERVAL, CONFIRM_TIMEOUT, ...callParams) {
+function sendAndConfirmation(contract, tezos, callback, confirmationCount, ...callParams) {
     return __awaiter(this, void 0, void 0, function* () {
         const transferParams = callback(contract, ...callParams);
         const operation = yield (0, utils_1.sendBatch)(tezos, [transferParams]);
-        yield operation.confirmation(1);
+        yield operation.confirmation(confirmationCount);
         // await confirmOperation(
         //   tezos,
         //   operation.opHash,
@@ -49,7 +49,7 @@ function extendCallQS(target, propertyKey, descriptor) {
                 case types_1.CallMode.returnOperation:
                     return send(this.contract, this.tezos, callback, ...callParams);
                 case types_1.CallMode.returnConfirmatedOperation:
-                    return sendAndConfirmation(this.contract, this.tezos, callback, this.syncInterval, this.confirmtaionTimeout, ...callParams);
+                    return sendAndConfirmation(this.contract, this.tezos, callback, this.confirmationCount, ...callParams);
                 default:
                     return paramsOnly(this.contract, callback, ...callParams);
             }

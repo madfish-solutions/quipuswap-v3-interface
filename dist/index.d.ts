@@ -1,12 +1,12 @@
-import { Contract, TezosToolkit, TransferParams } from "@taquito/taquito";
-import { BigNumber } from "bignumber.js";
-import { fa2Types, quipuswapV3Types, CallSettings, QsReturn, Nat, Int } from "./types";
-import { Address, Timestamp } from "./utils";
+import { Contract, TezosToolkit, TransferParams } from '@taquito/taquito';
+import { BigNumber } from 'bignumber.js';
+import { fa2Types, quipuswapV3Types, CallSettings, QsReturn, Nat, Int } from './types';
+import { Address, Timestamp } from './utils';
 export declare class QuipuswapV3Methods {
     static swapXY(contract: Contract, amount: Nat, deadline: Timestamp, minExpectedReceive: Nat, recipient: Address): TransferParams;
     static swapYX(contract: Contract, amount: Nat, deadline: Timestamp, minExpectedReceive: Nat, recipient: Address): TransferParams;
     static setPosition(contract: Contract, lowerTickIndex: Int, upperTickIndex: Int, lowerTickWitness: Int, upperTickWitness: Int, liquidity: Nat, deadline: Timestamp, maximumTokensContributedX: Nat, maximumTokensContributedY: Nat): TransferParams;
-    static updatePosition(contract: Contract, positionId: Nat, liquidityDelta: Nat, toX: Address, toY: Address, deadline: Timestamp, maximumTokensContributedX: Nat, maximumTokensContributedY: Nat): TransferParams;
+    static updatePosition(contract: Contract, positionId: Nat, liquidityDelta: Nat, toX: Address, toY: Address, deadline: Timestamp, maximumTokensContributedX: Int, maximumTokensContributedY: Int): TransferParams;
     static transfer(contract: Contract, ...params: fa2Types.Transfer[]): TransferParams;
     static updateOperators(contract: Contract, ...params: fa2Types.UpdateOperators[]): TransferParams;
     static increaseObservationCount(contract: Contract, amount: Nat): TransferParams;
@@ -23,12 +23,11 @@ export declare class QuipuswapV3Storage {
 }
 export declare class QuipuswapV3 {
     callSettings: CallSettings;
-    syncInterval: number;
-    confirmtaionTimeout: number;
+    confirmationCount: number;
     tezos: TezosToolkit;
     contract: Contract;
     storage: quipuswapV3Types.Storage;
-    constructor(callSettings?: CallSettings, syncInterval?: number, confirmtaionTimeout?: number);
+    constructor(callSettings?: CallSettings, confirmationCount?: number);
     init(tezos: TezosToolkit, contractAddress: string): Promise<this>;
     getStorage(positionIds?: Nat[], tickIndices?: Int[], bufferMapIndices?: Nat[]): Promise<quipuswapV3Types.Storage>;
     updateStorage(positionIds?: Nat[], tickIndices?: Int[], bufferMapIndices?: Nat[]): Promise<quipuswapV3Types.Storage>;
