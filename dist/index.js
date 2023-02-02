@@ -183,7 +183,7 @@ class QuipuswapV3Storage {
 }
 exports.QuipuswapV3Storage = QuipuswapV3Storage;
 class QuipuswapV3 {
-    constructor(callSettings = defaults_1.defaultCallSettings, confirmationCount = 1) {
+    constructor(callSettings = defaults_1.defaultCallSettings, confirmationCount = 5) {
         this.callSettings = callSettings;
         this.confirmationCount = confirmationCount;
     }

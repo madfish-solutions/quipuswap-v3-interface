@@ -263,7 +263,7 @@ export class QuipuswapV3 {
   storage: quipuswapV3Types.Storage;
   constructor(
     public callSettings: CallSettings = defaultCallSettings,
-    public confirmationCount: number = 1,
+    public confirmationCount: number = 5,
   ) {}
 
   async init(tezos: TezosToolkit, contractAddress: string) {
