@@ -242,18 +242,6 @@ Simplifying the fractions:
   dx = L * ( 2^80           - 2^80           )
            ( --------------   -------------- )
            ( sqrt_price_new   sqrt_price_old )
--}
-receivedX :: X 80 Natural -> X 80 Natural -> Natural -> Integer
-receivedX (X sqrtPriceOld) (X sqrtPriceNew) liquidity =
-  let dx =
-        fromIntegral @Natural @Double (liquidity * _280) / fromIntegral sqrtPriceNew
-        -
-        fromIntegral @Natural @Double (liquidity * _280) / fromIntegral sqrtPriceOld
-
-  -- dx is the amount of tokens to add to the pool.
-  -- To calculate how many tokens will be sent to the user, we flip the sign.
-  in
-    floor @Double @Integer (-dx)
  */
 export declare function calcReceivedX(sqrtPriceOld: Nat, sqrtPriceNew: Nat, liquidity: Nat): Int;
 /**

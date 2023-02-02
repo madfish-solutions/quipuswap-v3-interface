@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.extendCallQS = exports.sendAndConfirmation = exports.send = exports.paramsOnly = void 0;
 const types_1 = require("../types");
 const utils_1 = require("../utils");
-const confirmation_1 = require("./confirmation");
 function paramsOnly(contract, callback, ...callParams) {
     const transferParams = callback(contract, ...callParams);
     return transferParams;
@@ -30,7 +29,13 @@ function sendAndConfirmation(contract, tezos, callback, SYNC_INTERVAL, CONFIRM_T
     return __awaiter(this, void 0, void 0, function* () {
         const transferParams = callback(contract, ...callParams);
         const operation = yield (0, utils_1.sendBatch)(tezos, [transferParams]);
-        yield (0, confirmation_1.confirmOperation)(tezos, operation.opHash, CONFIRM_TIMEOUT, SYNC_INTERVAL);
+        yield operation.confirmation(1);
+        // await confirmOperation(
+        //   tezos,
+        //   operation.opHash,
+        //   CONFIRM_TIMEOUT,
+        //   SYNC_INTERVAL,
+        // );
         return operation;
     });
 }

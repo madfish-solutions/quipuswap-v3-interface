@@ -54,8 +54,8 @@ function xToYRec(p) {
         return p;
     }
     // TODO: change fees logic after new Quipuswap V3 contracts are deployed
-    let fee = (0, math_1.calcSwapFee)(p.s.constants.feeBps.toBignumber(), p.dx.toBignumber());
-    let sqrtPriceNew = (0, math_1.calcNewPriceX)(p.s.sqrtPrice, p.s.liquidity, p.dx.minus(fee));
+    let totalFee = (0, math_1.calcSwapFee)(p.s.constants.feeBps.toBignumber(), p.dx.toBignumber());
+    let sqrtPriceNew = (0, math_1.calcNewPriceX)(p.s.sqrtPrice, p.s.liquidity, p.dx.minus(totalFee));
     const curTickIndexNew = calcNewCurTickIndex(p.s.curTickIndex, p.s.sqrtPrice, sqrtPriceNew);
     if (curTickIndexNew.gte(p.s.curTickWitness)) {
         const dy = (0, math_1.shiftRight)(p.s.sqrtPrice.toBignumber().minus(sqrtPriceNew).multipliedBy(p.s.liquidity), new bignumber_js_1.default(80)).integerValue(bignumber_js_1.default.ROUND_FLOOR);
@@ -77,7 +77,7 @@ function xToYRec(p) {
         .multipliedBy(HUNDRED_PERCENT_BPS)
         .dividedBy(oneMinusFeeBps(p.s.constants.feeBps))
         .integerValue(bignumber_js_1.default.ROUND_CEIL);
-    fee = dxConsumed.minus(dxForDy);
+    totalFee = dxConsumed.minus(dxForDy);
     const sums = p.s.lastCumulative;
     const tickCumulativeOutsideNew = sums.tick.sum.minus(tick.tickCumulativeOutside);
     const tickNew = Object.assign(Object.assign({}, tick), { tickCumulativeOutside: tickCumulativeOutsideNew });
@@ -103,9 +103,8 @@ function yToXRec(p) {
     if (p.s.liquidity.isZero()) {
         return p;
     }
-    // TODO: change fees logic after new Quipuswap V3 contracts are deployed
-    let fee = (0, math_1.calcSwapFee)(p.s.constants.feeBps.toBignumber(), p.dy.toBignumber());
-    let dyMinusFee = p.dy.minus(fee);
+    let totalFee = (0, math_1.calcSwapFee)(p.s.constants.feeBps.toBignumber(), p.dy.toBignumber());
+    let dyMinusFee = p.dy.minus(totalFee);
     let sqrtPriceNew = (0, math_1.calcNewPriceY)(p.s.sqrtPrice, p.s.liquidity, dyMinusFee);
     const curTickIndexNew = calcNewCurTickIndex(p.s.curTickIndex, p.s.sqrtPrice, sqrtPriceNew);
     const tick = p.s.ticks[p.s.curTickWitness.toFixed()];
@@ -138,7 +137,7 @@ function yToXRec(p) {
         .multipliedBy(HUNDRED_PERCENT_BPS)
         .dividedBy(oneMinusFeeBps(p.s.constants.feeBps))
         .integerValue(bignumber_js_1.default.ROUND_CEIL);
-    fee = dyConsumed.minus(dyMinusFee);
+    totalFee = dyConsumed.minus(dyForDx);
     const sums = p.s.lastCumulative;
     const tickCumulativeOutsideNew = sums.tick.sum.minus(nextTick.tickCumulativeOutside);
     const nextTickNew = Object.assign(Object.assign({}, nextTick), { tickCumulativeOutside: tickCumulativeOutsideNew });

@@ -1,8 +1,8 @@
-import { Contract, TezosToolkit, TransferParams } from "@taquito/taquito";
-import { BatchWalletOperation } from "@taquito/taquito/dist/types/wallet/batch-operation";
-import { CallMode } from "../types";
-import { sendBatch } from "../utils";
-import { confirmOperation } from "./confirmation";
+import { Contract, TezosToolkit, TransferParams } from '@taquito/taquito';
+import { BatchWalletOperation } from '@taquito/taquito/dist/types/wallet/batch-operation';
+import { CallMode } from '../types';
+import { sendBatch } from '../utils';
+import { confirmOperation } from './confirmation';
 
 export function paramsOnly<T>(
   contract: Contract,
@@ -34,12 +34,13 @@ export async function sendAndConfirmation<T>(
 ) {
   const transferParams = callback(contract, ...callParams);
   const operation = await sendBatch(tezos, [transferParams]);
-  await confirmOperation(
-    tezos,
-    operation.opHash,
-    CONFIRM_TIMEOUT,
-    SYNC_INTERVAL,
-  );
+  await operation.confirmation(1);
+  // await confirmOperation(
+  //   tezos,
+  //   operation.opHash,
+  //   CONFIRM_TIMEOUT,
+  //   SYNC_INTERVAL,
+  // );
   return operation;
 }
 export function extendCallQS<T>(
